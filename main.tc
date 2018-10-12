@@ -1,0 +1,179 @@
+#include "global.th"
+#include "hal.th"
+#include "modbus.th"
+#include "utils.th"
+
+ioport *p;
+
+static void
+http_init(string ip, string mask, string gateway)
+{
+	byte i;
+	
+	/* Setting up network 
+	 */
+	net.ip = ip;
+	net.netmask = mask; 
+	net.gatewayip = gateway; 
+
+	/* Setting up sockets for HTTP server. As in documentation, we 
+	 * use sockets 8 thru 15 to set up for server.
+	 */
+	for(i=0; i<8; ++i) {
+		sock.num = i;
+		sock.targetinterface = PL_SOCK_INTERFACE_NET;
+		sock.allowedinterfaces = "WLN,NET";
+		sock.protocol = PL_SOCK_PROTOCOL_TCP;
+		sock.inconmode = PL_SOCK_INCONMODE_ANY_IP_ANY_PORT;
+		sock.httpportlist = "80"; // listen on port 80
+		sock.txbuffrq(4);
+		sock.varbuffrq(2);
+		sock.redir(PL_REDIR_SOCK0 + sock.num);
+	}
+}
+
+
+void
+on_sys_init()
+{
+	serial_init();
+	modbus_init();
+	
+	http_init("192.168.1.101", "255.255.255.0", "192.168.1.1");
+
+	tibbit_install(0, TB_05);
+	tibbit_install(1, TB_00_3);
+	
+	p = ioport_alloc(0, IO_RS485, -1);
+	lcd_init();
+}
+
+
+unsigned long getPPointerValue()
+{
+	return (unsigned long) p;
+}
+
+void
+on_button_pressed()
+{
+	byte addr = 0x42;
+	modbus_request(p, addr, READ_HOLDING_REGISTERS, 200, 2, "");
+}
+
+
+void
+reprogram_address(byte oldaddr, byte newaddr)
+{
+	string args;
+	
+	DBG("New address: " + str(newaddr));
+	args = chr(0) +  chr(newaddr);
+	modbus_request(p, oldaddr, PRESET_SINGLE_REGISTER, 200, 1, args);
+}
+
+
+void
+on_sys_timer()
+{
+}
+
+
+void
+on_ser_data_arrival()
+{
+#if 0
+	DBG(hexdump((byte *)&tmp[0], len(tmp)) + "\r\n");
+#endif	
+	on_modbus_data_arrival(MODBUS_SERIAL);
+}
+
+
+string
+process_request()
+{
+	string q = query_string();
+	string rqtype, snewaddr;
+	unsigned char newaddr = 0;
+	
+	rqtype = query_arg(q, "t", "");
+	snewaddr = query_arg(q, "a", "");
+	newaddr = val(snewaddr);
+	
+	if(rqtype == "Set") {
+		reprogram_address(0, newaddr);
+		return str(newaddr); 
+	} else if(rqtype == "Get") {
+		modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
+		 
+		while(!modbus_finished())
+			doevents;
+		
+		snewaddr = modbus_result();
+		
+		return chr(snewaddr[0]);
+	}
+	
+	return "N/A";
+}
+
+char
+get_id()
+{
+	string snewaddr;
+	unsigned char newaddr = 0;
+	newaddr = val(snewaddr);
+	//modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
+	modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
+	while(!modbus_finished())
+	doevents;
+	snewaddr = modbus_result();
+	return snewaddr[4];
+}
+
+void
+scan_sensors(unsigned char w)
+{
+	modbus_request(p, w, READ_HOLDING_REGISTERS, 200, 1, "");
+	sys.timercountms=0;
+	while(!modbus_finished()){
+		doevents;
+		if (sys.timercountms>100){
+		break;
+		}
+	}
+	if (modbus_finished()){
+		set_sensor_id(w);
+	}
+}
+
+void
+get_sensor_type(unsigned char w)
+{
+	string result;
+	modbus_request(p, w, READ_INPUT_REGISTERS, 201, 1, "");
+	while(!modbus_finished()){
+		doevents;
+	}
+	result = modbus_result();
+	result=result[4];
+	set_sensor_type(result);
+	
+}
+
+void
+get_sensor_data(unsigned char w)
+{
+	string result;
+	//Light
+	modbus_request(p, w, READ_INPUT_REGISTERS, 400, 1, "");
+	
+//	modbus_request(p, w, READ_INPUT_REGISTERS, 404, 1, "");
+	while(!modbus_finished()){
+		doevents;
+	}
+	result = modbus_result();
+	result=result[4];
+	set_sensor_data(result);
+	
+}

@@ -1,0 +1,240 @@
+include "display.tbh"
+declare sub set_id()
+dim sensor_no(10) as byte
+dim sensor_type(10) as byte
+dim sensor_data(10) as byte
+dim x,y,z as byte=0
+
+'Initializes LCD screen
+
+sub lcd_init()
+
+	lcd.width=320
+	lcd.height=240
+	io.num=PL_IO_NUM_55
+	io.enabled=YES
+	io.num=PL_IO_NUM_43
+	io.enabled=YES
+	io.num=PL_IO_NUM_42
+	io.enabled=YES
+	io.num=PL_IO_NUM_41
+	io.enabled=YES
+	io.num=PL_IO_NUM_40
+	io.enabled=YES
+	lcd.iomapping="55,43,42,41,40,0" 
+	lcd.rotated=YES 
+	lcd.enabled=YES
+	io.num=PL_IO_NUM_54 
+	io.enabled=YES
+	io.state=LOW
+	io.num=PL_IO_NUM_44
+	io.enabled=YES
+	io.state=LOW
+	kp.returnlinesmapping="36,37,38,39"
+	kp.enabled=YES
+	beep.divider=0
+	io.num=46
+	io.enabled=YES
+	io.num=47
+	io.enabled=YES
+	io.num=48
+	io.enabled=YES
+	home_screen()
+
+end sub
+
+
+sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
+
+	if key_event=PL_KP_EVENT_PRESSED then
+		beep.play("B*",PL_BEEP_CANINT)
+		pat.play("G~",PL_PAT_CANINT)
+		
+		select case key_code
+		case 0:
+			lcd_scan()
+		case 1:
+			lcd_poll()
+		case 2:
+'			set_id()
+		case 3:
+'			set_id()
+		end select
+	end if
+	
+end sub
+
+'Prints properties screen and sets LED.
+
+sub home_screen()
+	
+	lcd.lock
+	
+	lcd.forecolor=0
+	lcd.fill(0,0,lcd.width,lcd.height)
+	lcd.backcolor=0
+	lcd.forecolor=65535 
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)
+	lcd.print("HEXAGON SENSORS",80,20)
+	lcd.print("ID",10,60)
+	lcd.print("Type",70,60)
+	lcd.print("Data",150,60)
+	
+	lcd.unlock
+
+end sub
+
+'Prints properties screen and sets LED.
+
+sub lcd_scan()
+	dim b as byte=0
+	x=0
+	y=0
+	z=0
+	
+
+	for b=58 to 70
+		scan_sensors(b)
+	next b
+	
+	for b=0 to 9 
+		if sensor_no(b)<>0 then
+			get_sensor_type(sensor_no(b))
+		end if
+	next b	
+	
+	for b=0 to 9 
+		if sensor_no(b)<>0 then
+			get_sensor_data(sensor_no(b))
+		end if
+	next b	
+	
+		
+	lcd.lock
+	
+	lcd.forecolor=0
+	lcd.fill(0,0,lcd.width,lcd.height)
+	lcd.backcolor=0
+	lcd.forecolor=65535 
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)
+	lcd.print("HEXAGON SENSORS",80,20)
+	lcd.print("ID",10,60)
+	lcd.print("Type",70,60)
+	lcd.print("Data",190,60)
+	
+	for b=0 to 9 
+		if sensor_no(b)<>0 then
+			lcd.print(str(sensor_no(b)),10,90+(20*b))
+			lcd.print(str(sensor_data(b)),190,90+(20*b))
+			select case sensor_type(b)
+			case 1:lcd.print("Temp",70,90+(20*b))
+			case 2:lcd.print("Temp/Hum",70,90+(20*b))
+			case 3:lcd.print("Light",70,90+(20*b))
+			end select
+		end if
+	next b
+	
+	lcd.unlock
+
+end sub
+
+sub lcd_poll()
+	
+	dim b as byte=0
+	x=0
+	y=0
+	z=0
+	
+	
+	for b=0 to 9 
+		if sensor_no(b)<>0 then
+			get_sensor_type(sensor_no(b))
+		end if
+	next b	
+	
+	for b=0 to 9 
+		if sensor_no(b)<>0 then
+			get_sensor_data(sensor_no(b))
+		end if
+	next b	
+	
+		
+	lcd.lock
+	
+	lcd.forecolor=0
+	lcd.fill(0,0,lcd.width,lcd.height)
+	lcd.backcolor=0
+	lcd.forecolor=65535 
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)
+	lcd.print("HEXAGON SENSORS",80,20)
+	lcd.print("ID",10,60)
+	lcd.print("Type",70,60)
+	lcd.print("Data",190,60)
+	
+	for b=0 to 9 
+		if sensor_no(b)<>0 then
+			lcd.print(str(sensor_no(b)),10,90+(20*b))
+			lcd.print(str(sensor_data(b)),190,90+(20*b))
+			select case sensor_type(b)
+			case 1:lcd.print("Temp",70,90+(20*b))
+			case 2:lcd.print("Temp/Hum",70,90+(20*b))
+			case 3:lcd.print("Light",70,90+(20*b))
+			end select
+			
+		end if
+	next b
+	
+	lcd.unlock
+	
+end sub
+
+dim pval as dword
+sub set_id()
+	
+	lcd.lock
+	
+	lcd.forecolor=0
+	lcd.fill(0,0,lcd.width,lcd.height)
+	lcd.backcolor=0
+	lcd.forecolor=65535 
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)
+	lcd.print("SET ID",100,50)
+	'modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
+'	modbus_init()
+'	pval = getPPointerValue()
+'	modbus_request2(pval, 0, 3, 200, 1, "")
+
+
+
+	
+	lcd.print(get_id(),5,90)
+
+	lcd.unlock
+
+end sub
+
+sub set_sensor_id(id as byte)
+
+	sensor_no(x)=id
+	x=x+1
+
+end sub
+
+sub set_sensor_type(stype as byte)
+
+	sensor_type(y)=stype
+	y=y+1
+
+end sub
+	
+sub set_sensor_data(data as byte)
+
+	sensor_data(z)=data
+	z=z+1
+
+end sub
+	

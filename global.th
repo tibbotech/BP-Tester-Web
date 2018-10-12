@@ -1,0 +1,43 @@
+#ifndef __GLOBAL_TH_INCLUDED__
+#define __GLOBAL_TH_INCLUDED__
+
+
+#include "debug.th"
+
+
+typedef unsigned char byte;
+typedef unsigned short word;
+typedef unsigned long dword;
+
+
+#define NULL ((void *)0)
+#define COUNTOF(x)	(sizeof(x)/sizeof((x)[0]))
+
+
+typedef struct _val
+{
+	byte type;
+	union {
+		long l;
+		float f;
+	};
+} value;
+
+
+#define TYPE_LONG		0
+#define TYPE_FLOAT 		1
+
+
+typedef struct _sensor {
+	value prev[2];
+	value res[2];
+} sensor;
+
+
+#endif
+
+extern void lcd_init();
+extern void print_properties();
+extern void set_sensor_id(byte id);
+extern void set_sensor_type(byte stype);
+extern void set_sensor_data(byte data);

@@ -1,0 +1,83 @@
+#ifndef __MODBUS_HEADER_INCLUDED__
+#define __MODBUS_HEADER_INCLUDED__
+
+
+#include "global.th"
+#include "hal.th"
+//#include "sensors_db.th"
+
+
+enum modbus_source {
+	MODBUS_TCP,
+	MODBUS_SERIAL
+};
+
+
+enum modbus_state {
+	MODBUS_IDLE,
+	MODBUS_RECEIVING,
+	MODBUS_FINISHED
+};
+
+
+#define MODBUS_TIMEOUT			5000
+
+
+enum modbus_func_code {
+	READ_COILS 					= 1,
+	READ_DISCRETE_INPUTS 		= 2,
+	READ_HOLDING_REGISTERS 		= 3,
+	READ_INPUT_REGISTERS 		= 4,
+//
+	FORCE_SINGLE_COIL			= 5,
+	PRESET_SINGLE_REGISTER		= 6,
+//
+	READ_EXCEPTION_STATUS		= 7,
+	DIAGNOSTIC					= 8,
+// 9 reserved
+// 10 reserved
+	GET_COM_EVENT_COUNTER		= 11,
+	GET_COM_EVENT_LOG			= 12,
+// 13 reserved
+// 14 reserved
+	FORCE_MULTIPLE_COILS		= 15,
+	PRESET_MULTIPLE_REGISTERS 	= 16
+};
+
+
+//typedef unsigned char modbus_devaddr;
+
+
+/* ModBus request header
+ */
+struct modbus_reqhdr {
+	byte func_code;
+	word address;
+	word count;
+};
+
+
+struct modbus_tcphdr {
+	word transact;
+	word proto;
+	word length;
+};
+
+
+struct modbus_req {
+	byte addr;
+	modbus_reqhdr hdr;
+	word crc;
+};
+
+
+extern void modbus_request(ioport *, byte, byte, word, word, string);
+extern bool modbus_complete(modbus_source);
+extern void on_modbus_data_arrival(modbus_source);
+extern void modbus_init();
+extern bool modbus_finished();
+extern string modbus_result();
+//extern bool modbus_process_result(sensor *);
+
+
+#endif

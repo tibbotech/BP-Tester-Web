@@ -1,0 +1,8 @@
+#include "global.th"
+
+
+void 
+xmodem_send(string& name)
+{
+	
+}

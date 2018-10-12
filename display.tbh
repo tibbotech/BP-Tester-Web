@@ -1,0 +1,17 @@
+declare sub modbus_init()
+declare sub home_screen()
+declare sub lcd_scan()
+declare sub lcd_poll()
+declare sub set_sensor_id(id as byte)
+declare sub set_sensor_type(stype as byte)
+declare sub set_sensor_data(data as byte)
+declare sub scan_sensors(id as byte)
+declare sub get_sensor_type(id as byte)
+declare sub get_sensor_data(id as byte)
+
+declare function getPPointerValue() as dword
+declare function process_request() as string
+
+declare sub modbus_request2(ptr as dword,  devaddr as byte,  request as byte,  start as word, count as  word,  regdata as string)
+
+declare function get_id() as byte
