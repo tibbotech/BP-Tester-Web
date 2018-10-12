@@ -155,20 +155,82 @@ get_sensor_type(unsigned char w)
 }
 
 void
-get_sensor_data(unsigned char w)
+get_sensor_data(unsigned char w,unsigned char x)
 {
-	string result;
-	//Light
-	modbus_request(p, w, READ_INPUT_REGISTERS, 400, 1, "");
-	
-//	modbus_request(p, w, READ_INPUT_REGISTERS, 404, 1, "");
-	while(!modbus_finished()){
-		on_modbus_data_arrival(MODBUS_SERIAL);
+
+	float result;
+	//sensor *sens;
+	byte hi, lo;
+	word port, cnt, r1, r2, r3;
+
+	string res;
+	switch(x){
+	case 1:	//temp
+		modbus_request(p, w, READ_INPUT_REGISTERS, 301, 2, "");
+		break;
+	case 2:	//temp&hum
+		modbus_request(p, w, READ_INPUT_REGISTERS, 304, 8, "");
+		break;
+	case 3:	//light
+		modbus_request(p, w, READ_INPUT_REGISTERS, 401, 2, "");
+		break;
+	default:
+
 	}
-	result = modbus_result();
-	result=result[4];
-	set_sensor_data(result);
+	while(!modbus_finished()){
+	on_modbus_data_arrival(MODBUS_SERIAL);
+	}
+	res = modbus_result();
+	if(res != "") {
+		switch(x) {
+			case 1:
+				hi = res[5];
+				lo = res[6];
+				r1 = (hi << 8) | lo; 
+//				sens->prev[0] = sens->res[0];
+//				sens->res[0].type = TYPE_FLOAT;
+//				sens->res[0].f = (float)r1 / 16;
+				result=(float)r1/16;
+				
+				break;
+
+			case 2:
+				hi = res[5];
+				lo = res[6];
+				r1 = (hi << 8) | lo; 
+//				sens->prev[0] = sens->res[0];
+//				sens->res[0].type = TYPE_FLOAT;
+//				sens->res[0].f = ((float)r1 / 16382.0) * 165 - 40;
+				
+				hi = res[13];
+				lo = res[14];
+				r2 = (hi << 8) | lo;
+//				sens->prev[1] = sens->res[1];
+//				sens->res[1].type = TYPE_FLOAT;
+//				sens->res[1].f = ((float)r2 / 16382.0) * 100;
+				result=((float)r2 / 16382.0) * 100;
+				break;
+			
+			case 3:
+				hi = res[6];
+				lo = res[5];
+				r1 = (hi << 8) | lo; 
+//				sens->prev[0] = sens->res[0];
+//				sens->res[0].type = TYPE_LONG;
+//				sens->res[0].l = (long)((float)r1 * 0.833333333);
+				result=(long)((float)r1 * 0.833333333);
+			
+				break;
+			
+			
+			default:
+				return;
+		}
+	}
 	
+	//result=result[4];
+	set_sensor_data(str(result));
+		
 }
 
 

@@ -40,4 +40,4 @@ extern void lcd_init();
 extern void print_properties();
 extern void set_sensor_id(byte id);
 extern void set_sensor_type(byte stype);
-extern void set_sensor_data(byte data);
+extern void set_sensor_data(string data);
