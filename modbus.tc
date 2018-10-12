@@ -270,6 +270,8 @@ on_modbus_data_arrival(modbus_source src)
 		if(len(_packet) >= _pdu_len) {
 			DBG(hexdump((byte *)&_packet[0], _pdu_len) + "\r\n");
 			_state = MODBUS_FINISHED;
+			//ADD CALLBACK HERE 
+			
 		}
 	}
 }

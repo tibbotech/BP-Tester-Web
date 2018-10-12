@@ -74,18 +74,11 @@ reprogram_address(byte oldaddr, byte newaddr)
 
 
 void
-on_sys_timer()
-{
-}
-
-
-void
 on_ser_data_arrival()
 {
 #if 0
 	DBG(hexdump((byte *)&tmp[0], len(tmp)) + "\r\n");
 #endif	
-	on_modbus_data_arrival(MODBUS_SERIAL);
 }
 
 
@@ -106,8 +99,8 @@ process_request()
 	} else if(rqtype == "Get") {
 		modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
 		 
-		while(!modbus_finished())
-			doevents;
+		while(!modbus_finished());
+			on_modbus_data_arrival(MODBUS_SERIAL);
 		
 		snewaddr = modbus_result();
 		
@@ -125,8 +118,8 @@ get_id()
 	newaddr = val(snewaddr);
 	//modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
 	modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
-	while(!modbus_finished())
-	doevents;
+	while(!modbus_finished());
+	on_modbus_data_arrival(MODBUS_SERIAL);
 	snewaddr = modbus_result();
 	return snewaddr[4];
 }
@@ -137,7 +130,7 @@ scan_sensors(unsigned char w)
 	modbus_request(p, w, READ_HOLDING_REGISTERS, 200, 1, "");
 	sys.timercountms=0;
 	while(!modbus_finished()){
-		doevents;
+		on_modbus_data_arrival(MODBUS_SERIAL);
 		if (sys.timercountms>100){
 		break;
 		}
@@ -153,7 +146,7 @@ get_sensor_type(unsigned char w)
 	string result;
 	modbus_request(p, w, READ_INPUT_REGISTERS, 201, 1, "");
 	while(!modbus_finished()){
-		doevents;
+		on_modbus_data_arrival(MODBUS_SERIAL);
 	}
 	result = modbus_result();
 	result=result[4];
@@ -170,10 +163,12 @@ get_sensor_data(unsigned char w)
 	
 //	modbus_request(p, w, READ_INPUT_REGISTERS, 404, 1, "");
 	while(!modbus_finished()){
-		doevents;
+		on_modbus_data_arrival(MODBUS_SERIAL);
 	}
 	result = modbus_result();
 	result=result[4];
 	set_sensor_data(result);
 	
 }
+
+

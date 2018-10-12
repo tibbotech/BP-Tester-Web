@@ -1,10 +1,13 @@
 include "display.tbh"
 declare sub set_id()
+dim poll_sensors as boolean=false
 dim sensor_no(10) as byte
 dim sensor_type(10) as byte
 dim sensor_data(10) as byte
 dim x,y,z as byte=0
-
+dim timer as byte=0
+dim screen as byte=0
+dim id as byte = 1
 'Initializes LCD screen
 
 sub lcd_init()
@@ -50,17 +53,61 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 		beep.play("B*",PL_BEEP_CANINT)
 		pat.play("G~",PL_PAT_CANINT)
 		
-		select case key_code
-		case 0:
-			lcd_scan()
-		case 1:
-			lcd_poll()
-		case 2:
-'			set_id()
-		case 3:
-'			set_id()
-		end select
+		if screen=0 then
+			select case key_code
+			case 0:
+				poll_sensors=false
+				wait_screen()
+				lcd_scan()
+			case 1:
+				poll_sensors=true
+			case 2:
+				poll_sensors=false
+				upload_firmware_screen()				 
+				screen=1
+			case 3:
+				poll_sensors=false
+				set_id_screen()				
+				screen=2
+				
+			end select
+		
+		
+		else if screen=1 then
+			select case key_code
+			case 0:
+				home_screen()
+				screen=0
+			case 3:
+				upload_firmware()
+			end select
+	
+	
+		else if screen=2 then
+			select case key_code
+			case 0:
+				home_screen()
+				
+				screen=0
+			case 1:
+				if id>1 then
+					id=id-1
+				end if
+				
+				change_id()
+			case 2:
+				if id<247 then
+					id=id+1
+				end if
+				change_id()
+			case 3:
+				reprogram_address(0,id)
+			end select		
+		end if
+		
 	end if
+	
+	sys.debugprint("Poll Sensor:" + stri(poll_sensors) + "\r\n")
 	
 end sub
 
@@ -76,13 +123,107 @@ sub home_screen()
 	lcd.forecolor=65535 
 	romfile.open("11x19(HP).bin")
 	lcd.setfont(romfile.offset)
-	lcd.print("HEXAGON SENSORS",80,20)
-	lcd.print("ID",10,60)
-	lcd.print("Type",70,60)
-	lcd.print("Data",150,60)
+	lcd.print("Hexagon Sensor Test",5,12)
+	lcd.horline(5,315,40)
+	lcd.verline(5,40,240)
+	lcd.verline(80,220,240)
+	lcd.verline(160,220,240)
+	lcd.verline(240,220,240)
+	lcd.horline(5,315,239)
+	lcd.verline(315,40,240)
+	lcd.print("ID",10,50)
+	lcd.print("Type",70,50)
+	lcd.print("Data",190,50)
+	lcd.horline(5,315,75)
+	lcd.horline(5,315,220)
+	romfile.open("Tibbo-5x7(V).bin")
+	lcd.setfont(romfile.offset)	
+	lcd.forecolor=25544
+	lcd.print("Scan",30,227)
+	lcd.print("Poll",107,227)
+	lcd.printaligned("Upload Firmware",177,222,50,50)
+	lcd.print("Set ID",260,227)
+	lcd.forecolor=65535 
+	romfile.open("logosmall.bmp")
+	lcd.bmp(romfile.offset,245,0,0,0,lcd.width,lcd.height)
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)	
+	lcd.unlock
+
+end sub
+
+
+
+sub set_id_screen()
+	
+	lcd.lock
+	
+	lcd.forecolor=0
+	lcd.fill(0,0,lcd.width,lcd.height)
+	lcd.backcolor=0
+	lcd.forecolor=65535 
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)
+	lcd.print("Set ID",5,12)
+	lcd.horline(5,315,40)
+	lcd.verline(5,40,240)
+	lcd.verline(80,220,240)
+	lcd.verline(160,220,240)
+	lcd.verline(240,220,240)
+	lcd.horline(5,315,239)
+	lcd.verline(315,40,240)
+	lcd.horline(5,315,220)
+	romfile.open("Tibbo-5x7(V).bin")
+	lcd.setfont(romfile.offset)	
+	lcd.forecolor=25544
+	lcd.print("Exit",30,227)
+	lcd.print("-",112,227)
+	lcd.print("+",203,227)
+	lcd.print("Set ID",260,227)
+	lcd.forecolor=65535 
+	romfile.open("logosmall.bmp")
+	lcd.bmp(romfile.offset,245,0,0,0,lcd.width,lcd.height)
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)	
+	lcd.printaligned("1. Select the new ID.", 15,50,295,160)
+	lcd.printaligned("2. Press and hold MD button on sensor.", 15,75,295,160)
+	lcd.printaligned("3. Press the SET button.", 15,120,295,160)
+	lcd.printaligned("4. Release the MD button.", 15,145,295,160)
+	lcd.forecolor=65535
+	lcd.print("ID: ",15,180)
+	lcd.forecolor=val("&b"+strgen(lcd.greenbits/&hFF,"1")+strgen(lcd.greenbits And &hFF,"0"))
+	lcd.print(str(id),45,180)
+	lcd.forecolor=0
+	
+	
+	
+	
+	
 	
 	lcd.unlock
 
+end sub
+
+sub change_id()
+	lcd.forecolor=0
+	lcd.fill(45,180,60,30)
+	lcd.forecolor=65535
+	lcd.print("ID: ",15,180)
+	lcd.forecolor=val("&b"+strgen(lcd.greenbits/&hFF,"1")+strgen(lcd.greenbits And &hFF,"0"))
+	lcd.print(str(id),45,180)
+	lcd.forecolor=0
+	
+	
+end sub
+
+sub on_sys_timer()
+	
+	timer=timer+1
+	if timer>=2 then
+		lcd_poll()
+		timer=0
+	end if
+	
 end sub
 
 'Prints properties screen and sets LED.
@@ -94,7 +235,7 @@ sub lcd_scan()
 	z=0
 	
 
-	for b=58 to 70
+	for b=1 to 10
 		scan_sensors(b)
 	next b
 	
@@ -104,25 +245,8 @@ sub lcd_scan()
 		end if
 	next b	
 	
-	for b=0 to 9 
-		if sensor_no(b)<>0 then
-			get_sensor_data(sensor_no(b))
-		end if
-	next b	
-	
-		
+	home_screen()
 	lcd.lock
-	
-	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
-	romfile.open("11x19(HP).bin")
-	lcd.setfont(romfile.offset)
-	lcd.print("HEXAGON SENSORS",80,20)
-	lcd.print("ID",10,60)
-	lcd.print("Type",70,60)
-	lcd.print("Data",190,60)
 	
 	for b=0 to 9 
 		if sensor_no(b)<>0 then
@@ -141,18 +265,11 @@ sub lcd_scan()
 end sub
 
 sub lcd_poll()
-	
+
 	dim b as byte=0
 	x=0
 	y=0
 	z=0
-	
-	
-	for b=0 to 9 
-		if sensor_no(b)<>0 then
-			get_sensor_type(sensor_no(b))
-		end if
-	next b	
 	
 	for b=0 to 9 
 		if sensor_no(b)<>0 then
@@ -162,18 +279,9 @@ sub lcd_poll()
 	
 		
 	lcd.lock
-	
 	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
-	romfile.open("11x19(HP).bin")
-	lcd.setfont(romfile.offset)
-	lcd.print("HEXAGON SENSORS",80,20)
-	lcd.print("ID",10,60)
-	lcd.print("Type",70,60)
-	lcd.print("Data",190,60)
-	
+	lcd.fill(190,90,120,130)
+	lcd.forecolor=65535
 	for b=0 to 9 
 		if sensor_no(b)<>0 then
 			lcd.print(str(sensor_no(b)),10,90+(20*b))
@@ -186,36 +294,34 @@ sub lcd_poll()
 			
 		end if
 	next b
-	
 	lcd.unlock
-	
 end sub
 
-dim pval as dword
-sub set_id()
+'dim pval as dword
+'sub set_id()
 	
-	lcd.lock
+'	lcd.lock
 	
-	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
-	romfile.open("11x19(HP).bin")
-	lcd.setfont(romfile.offset)
-	lcd.print("SET ID",100,50)
-	'modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
-'	modbus_init()
-'	pval = getPPointerValue()
-'	modbus_request2(pval, 0, 3, 200, 1, "")
+'	lcd.forecolor=0
+'	lcd.fill(0,0,lcd.width,lcd.height)
+'	lcd.backcolor=0
+'	lcd.forecolor=65535 
+'	romfile.open("11x19(HP).bin")
+'	lcd.setfont(romfile.offset)
+'	lcd.print("SET ID",100,50)
+'	'modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
+''	modbus_init()
+''	pval = getPPointerValue()
+''	modbus_request2(pval, 0, 3, 200, 1, "")
 
 
 
 	
-	lcd.print(get_id(),5,90)
+'	lcd.print(get_id(),5,90)
 
-	lcd.unlock
+'	lcd.unlock
 
-end sub
+'end sub
 
 sub set_sensor_id(id as byte)
 
@@ -238,3 +344,65 @@ sub set_sensor_data(data as byte)
 
 end sub
 	
+sub delay_mls(ms as dword)
+
+	sys.timercountms = 0
+	while sys.timercountms < ms
+	wend	
+
+end sub
+
+sub wait_screen()
+	
+	lcd.forecolor=0
+	lcd.fill(0,0,lcd.width,lcd.height)
+	lcd.backcolor=0
+	lcd.forecolor=65535 
+	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
+	lcd.print("Scanning for sensors",60,100)
+	lcd.print("Please wait",105,130)
+	
+end sub
+
+
+sub upload_firmware_screen()
+	
+	lcd.lock
+	
+	lcd.forecolor=0
+	lcd.fill(0,0,lcd.width,lcd.height)
+	lcd.backcolor=0
+	lcd.forecolor=65535 
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)
+	lcd.print("Upload Firmware",5,12)
+	lcd.horline(5,315,40)
+	lcd.verline(5,40,240)
+	lcd.verline(80,220,240)
+	lcd.verline(160,220,240)
+	lcd.verline(240,220,240)
+	lcd.horline(5,315,239)
+	lcd.verline(315,40,240)
+	lcd.horline(5,315,220)
+	romfile.open("Tibbo-5x7(V).bin")
+	lcd.setfont(romfile.offset)	
+	lcd.forecolor=25544
+	lcd.print("Exit",30,227)
+	lcd.print("Restart",260,227)
+	lcd.forecolor=65535 
+	romfile.open("logosmall.bmp")
+	lcd.bmp(romfile.offset,245,0,0,0,lcd.width,lcd.height)
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)	
+	lcd.printaligned("1. Disconnect sensor power.", 15,50,295,160)
+	lcd.printaligned("2. Press and hold MD button on sensor.", 15,75,295,160)
+	lcd.printaligned("3. Connect power without releasing MD button", 15,120,295,160)
+	lcd.printaligned("4. Release the MD button.", 15,165,295,160)
+	lcd.forecolor=0
+	lcd.unlock
+
+end sub
+
+sub upload_firmware()
+	
+end sub

@@ -8,7 +8,13 @@ declare sub set_sensor_data(data as byte)
 declare sub scan_sensors(id as byte)
 declare sub get_sensor_type(id as byte)
 declare sub get_sensor_data(id as byte)
-
+declare sub set_id_screen()
+declare sub change_id()
+declare sub delay_mls(ms as dword)
+declare sub wait_screen()
+declare sub upload_firmware_screen()
+declare sub upload_firmware()
+declare sub reprogram_address(oldaddr as byte, newaddr as byte)
 declare function getPPointerValue() as dword
 declare function process_request() as string
 
