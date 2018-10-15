@@ -23,7 +23,6 @@ serial_init()
 	_rates[R_38400] = d / 4; 	// 38400
 	_rates[R_57600] = d / 6; 	// 57600
 	_rates[R_115200] = d / 12; 	// 115200
-	_rates[R_230400] = d / 24;	// 230400
 	
 	for(i=0; i<HAL_UART_COUNT; ++i)
 		_serial[i] = NULL;
@@ -65,8 +64,6 @@ serial_set_rate(ioport *p, serial_rate rate)
 }
 
 
-/* 
- */
 serial_role
 serial_get_role(ioport *sp)
 {

@@ -575,10 +575,23 @@ _memcpy(void *dst, void *src, unsigned short cb)
 }
 
 
+typedef union {
+	unsigned char b[2];
+	unsigned short w;
+} us_t;
+
+
 unsigned short 
 htons(unsigned short v) 
 {
-	return ((v >> 8) & 0xFF) | (v << 8);
+	us_t vt, rt;
+	
+	vt.w = v;
+	
+	rt.b[0] = vt.b[1];
+	rt.b[1] = vt.b[0];
+	
+	return rt.w;
 }
 
 
@@ -745,30 +758,13 @@ contains_only(string& pattern, string& chars)
 void
 render_login_form()
 {
-	string body;
-	
-	echo("<form action=\"login.html\" method=\"POST\">\r\n");
-	echo("<script language=\"text/javascript\">\r\n");
-	
- 	char t = 0; romfile.open("xmodem.js");
-	if(t) {
-		dword dwpos = romfile.find32(0, "[data]", 1); // find the position of the start of the section
-		
-		if(0 != dwpos) {
-			romfile.pointer32 = dwpos; 
-			body = romfile.getdata(255);
-			if("[section]" != body) {
-				byte p = instr(0, body, "<", 1);
-				if(p > 1) {
-					body = left(body, p);
-					DBG(body);
-				}
-			}
-		}
+	//<form action="login.html" method="POST">
+	//</form>
 	}
 
-	echo("<!-- -->\r\n");
-	echo("</script>\r\n");
-	echo("</form>\r\n");
-}
 	
+void
+check_user_credentials(void)
+{
+	for(;;) {}
+}

@@ -2,6 +2,8 @@
 #define __GLOBAL_TH_INCLUDED__
 
 
+
+
 #include "debug.th"
 
 
@@ -41,3 +43,40 @@ extern void print_properties();
 extern void set_sensor_id(byte id);
 extern void set_sensor_type(byte stype);
 extern void set_sensor_data(string data);
+extern unsigned long getPPointerValue();
+extern void firmware_upload_in_prog_screen();
+extern void update_firmware_upload_screen(word currentpack, word totalpacks);
+extern void upload_successful_screen();
+extern void xmodem_waiting();
+
+#define __GLOBAL_TH_INCLUDED__
+
+
+typedef unsigned char byte;
+typedef unsigned short word;
+typedef unsigned long dword;
+
+
+#define MAX_DATA_LEN 4096
+#define MAX_CFG_LEN 8
+
+
+typedef struct {
+	word datalen;
+	word data[MAX_DATA_LEN];
+	word config[MAX_CFG_LEN];
+} firmware;
+
+
+#ifndef NULL
+#define NULL 0
+#endif
+
+
+#define COUNTOF(x)	(sizeof(x)/sizeof((x)[0]))
+
+
+#include "debug.th"
+
+
+

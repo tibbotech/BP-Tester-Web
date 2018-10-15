@@ -30,9 +30,6 @@ enum serial_rate {
 	R_38400,
 	R_57600,
 	R_115200,
-	R_230400,
-	R_460800,
-	R_921600,	/* This is maximal bitrate available for our UARTs */
 	RATE_MAX
 };
 

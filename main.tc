@@ -4,46 +4,17 @@
 #include "utils.th"
 
 ioport *p;
-
-static void
-http_init(string ip, string mask, string gateway)
-{
-	byte i;
-	
-	/* Setting up network 
-	 */
-	net.ip = ip;
-	net.netmask = mask; 
-	net.gatewayip = gateway; 
-
-	/* Setting up sockets for HTTP server. As in documentation, we 
-	 * use sockets 8 thru 15 to set up for server.
-	 */
-	for(i=0; i<8; ++i) {
-		sock.num = i;
-		sock.targetinterface = PL_SOCK_INTERFACE_NET;
-		sock.allowedinterfaces = "WLN,NET";
-		sock.protocol = PL_SOCK_PROTOCOL_TCP;
-		sock.inconmode = PL_SOCK_INCONMODE_ANY_IP_ANY_PORT;
-		sock.httpportlist = "80"; // listen on port 80
-		sock.txbuffrq(4);
-		sock.varbuffrq(2);
-		sock.redir(PL_REDIR_SOCK0 + sock.num);
-	}
-}
-
-
+void upload_firmware();
 void
 on_sys_init()
 {
+
+
 	serial_init();
 	modbus_init();
 	
-	http_init("192.168.1.101", "255.255.255.0", "192.168.1.1");
-
 	tibbit_install(0, TB_05);
 	tibbit_install(1, TB_00_3);
-	
 	p = ioport_alloc(0, IO_RS485, -1);
 	lcd_init();
 }
@@ -53,14 +24,6 @@ unsigned long getPPointerValue()
 {
 	return (unsigned long) p;
 }
-
-void
-on_button_pressed()
-{
-	byte addr = 0x42;
-	modbus_request(p, addr, READ_HOLDING_REGISTERS, 200, 2, "");
-}
-
 
 void
 reprogram_address(byte oldaddr, byte newaddr)
@@ -99,8 +62,13 @@ process_request()
 	} else if(rqtype == "Get") {
 		modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
 		 
-		while(!modbus_finished());
-			on_modbus_data_arrival(MODBUS_SERIAL);
+		sys.timercountms=0;
+	while(!modbus_finished()){
+		on_modbus_data_arrival(MODBUS_SERIAL);
+		if (sys.timercountms>100){
+		break;
+		}
+	}
 		
 		snewaddr = modbus_result();
 		
@@ -118,15 +86,29 @@ get_id()
 	newaddr = val(snewaddr);
 	//modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
 	modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
-	while(!modbus_finished());
-	on_modbus_data_arrival(MODBUS_SERIAL);
+	sys.timercountms=0;
+	while(!modbus_finished()){
+		on_modbus_data_arrival(MODBUS_SERIAL);
+		if (sys.timercountms>100){
+		break;
+		}
+	}
 	snewaddr = modbus_result();
 	return snewaddr[4];
 }
 
 void
 scan_sensors(unsigned char w)
+
 {
+	modbus_request(p, 1, READ_HOLDING_REGISTERS, 200, 1, "");
+	sys.timercountms=0;
+	while(!modbus_finished()){
+		on_modbus_data_arrival(MODBUS_SERIAL);
+		if (sys.timercountms>100){
+		break;
+		}
+	}
 	modbus_request(p, w, READ_HOLDING_REGISTERS, 200, 1, "");
 	sys.timercountms=0;
 	while(!modbus_finished()){
@@ -145,8 +127,12 @@ get_sensor_type(unsigned char w)
 {
 	string result;
 	modbus_request(p, w, READ_INPUT_REGISTERS, 201, 1, "");
+	sys.timercountms=0;
 	while(!modbus_finished()){
 		on_modbus_data_arrival(MODBUS_SERIAL);
+		if (sys.timercountms>100){
+		break;
+		}
 	}
 	result = modbus_result();
 	result=result[4];
@@ -166,19 +152,23 @@ get_sensor_data(unsigned char w,unsigned char x)
 	string res;
 	switch(x){
 	case 1:	//temp
-		modbus_request(p, w, READ_INPUT_REGISTERS, 301, 2, "");
+		modbus_request(p, w, READ_INPUT_REGISTERS, 300, 2, "");
 		break;
 	case 2:	//temp&hum
-		modbus_request(p, w, READ_INPUT_REGISTERS, 304, 8, "");
+		modbus_request(p, w, READ_INPUT_REGISTERS, 300, 8, "");
 		break;
 	case 3:	//light
-		modbus_request(p, w, READ_INPUT_REGISTERS, 401, 2, "");
+		modbus_request(p, w, READ_INPUT_REGISTERS, 400, 2, "");
 		break;
 	default:
 
 	}
+	sys.timercountms=0;
 	while(!modbus_finished()){
-	on_modbus_data_arrival(MODBUS_SERIAL);
+		on_modbus_data_arrival(MODBUS_SERIAL);
+		if (sys.timercountms>100){
+		break;
+		}
 	}
 	res = modbus_result();
 	if(res != "") {
@@ -234,3 +224,296 @@ get_sensor_data(unsigned char w,unsigned char x)
 }
 
 
+//unsigned long sp;
+/* \file xmodem.tc
+ * This file contains the X-Modem protocol realisation to upload firmware
+ * into the hexagon sensors
+ */
+
+#define XMODEM_PACKET_SIZE      128
+
+#define XMODEM_SOH              0x01
+#define XMODEM_EOT              0x04
+#define XMODEM_ACK              0x06 
+#define XMODEM_NACK             0x15
+#define XMODEM_ETB              0x17
+#define XMODEM_CAN              0x18
+#define XMODEM_16BITCRC         'C'
+#define XMODEM_EOF              0x1A    // Ctrl+Z
+
+#define MAX_RETRIES             10
+#define XMODEM_TIMEOUT			3000	// in ms
+
+static word
+swapb(word t)
+{
+	return ((t >> 8) & 0xFF) | ((t & 0xFF) << 8);
+}
+
+bool 
+load_firmware(string name, firmware *fw)
+{
+	word i, offs, temp, addr;
+	dword p, e, lba;
+	string s, st;
+	byte rlen, rtyp;
+	
+	DBG("Parsing HEX file");
+
+	fw->datalen = 0;
+	for(i=0; i<MAX_DATA_LEN; ++i)
+		fw->data[i] = 0x3FFF;
+	
+	romfile.open(name);
+	if(0 == romfile.size)
+		return false;
+
+	lba = 0;
+	p = 0;
+	
+	for(;;) {
+		/* Find Start-Of-Record mark */
+		p = romfile.find32(p, ":", 1);
+		if(0 == p)
+			break;
+		
+		/* Find end of line */
+		e = romfile.find32(p, "\r\n", 1);
+		if(0 == e)
+			e = romfile.size;
+		
+		/* Check line length */
+		if(e - p > 255)
+			break;
+		
+		/* Get the record */
+		romfile.pointer32 = p;
+		s = romfile.getdata(e - p);
+		p = e + 2;
+		
+		/* Parse the record */
+		rlen = val("&h" + mid(s, 2, 2));
+		offs = val("&h" + mid(s, 4, 4));
+		rtyp = val("&h" + mid(s, 8, 2));
+		
+		switch(rtyp) {
+			case 0x00: // DATA
+				/* Data record must be word-aligned
+				 */
+				if(0 != rlen % 2)
+					return false;
+				
+				for(i=0; i<(rlen / 2); ++i) {
+					st = mid(s, 10 + i*4, 4);
+					temp = val("&h" + st);
+					if(0 == lba) {
+						addr = lba + offs/2 + i;
+						fw->data[addr] = swapb(temp);
+						if(addr > fw->datalen)
+							fw->datalen = addr;
+					} else if(lba == 0x10000) {
+						fw->config[offs/2 + i] = temp;
+					}
+				}
+				break;
+				
+			case 0x01: // EOF
+				return true; 
+				
+			case 0x02: // Extended Segment Address 
+				false; // Breakpoint placeholder
+				
+			case 0x03: // Start Segment Address
+				false; // Breakpoint placeholder
+				
+			case 0x04: // Extended Linead Address
+				/* The 32-bit Extended Linear Address Record is used to specify bits 16-31 of 
+				 * the Linear Base Address (LBA), where bits 0-15 of the LBA are zero.
+				 */
+				if(2 != rlen)
+					return false;
+
+				st = mid(s, 10, 4);
+				lba = val("0x" + st);
+				lba = lba << 16;
+				break;
+				
+			case 0x05: // Start Linear Address
+				false; // Breakpoint placeholder
+				
+			default:
+				return false;
+		}
+	}
+	
+	/* Will never get here, but compiler complains about 'return' absence
+	 */
+	 return false;
+}
+
+
+static string
+recv_tm(byte cnt)
+{
+	string res;
+	dword tm;
+	
+	tm = sys.timercountms + XMODEM_TIMEOUT;
+	while(sys.timercountms < tm) {
+		res = ser.peekdata(cnt);
+		if(len(res) == cnt)
+			break;
+	}
+	
+	return res;
+}
+
+
+static string
+wdump(byte *data)
+{
+	byte i;
+	word w;
+	string res = "";
+	
+	//for(i=0; i<64; i+=2)
+	for(i=0; i<32; i++)
+		res += "0x" + tohex(data[i]) + ","; //tohex(data[i]) + " ";
+	
+	return res;
+}
+
+
+static bool
+transmit_block(byte *data, word blk, word blockcnt)
+{
+	string pkt, rpl;
+	byte retries;
+	byte i;
+	word cksum;
+	
+	for(retries=0;;) {
+		/* Header */
+		pkt = chr(XMODEM_SOH) + chr(blk & 0xFF) + chr(0xFF - (blk & 0xFF));
+		cksum = 0;
+		
+		/* Body */
+		for(i=0; i<XMODEM_PACKET_SIZE; ++i) {
+			pkt += chr(data[i]);
+			cksum += data[i];
+		}
+		
+		/* Checksum */
+		pkt += chr(cksum & 0xFF);
+
+		DBG("Sending packet #" + str(blk) + " of " + str(blockcnt));
+		update_firmware_upload_screen(blk, blockcnt);
+#if 0		
+		DBG(wdump((byte *)&pkt[3]));
+		DBG(wdump((byte *)&pkt[32+3]));
+		DBG(wdump((byte *)&pkt[64+3]));
+		DBG(wdump((byte *)&pkt[96+3]));
+#endif
+
+retransmit:	
+		serial_send(p, pkt);
+		
+		/* Check timeout */
+		do {
+			rpl = serial_recv(p, 1);
+		} while(rpl == "");
+
+		/* Parse reply packet
+		 */
+		switch(rpl[0]) {
+			case XMODEM_NACK:
+				DBG("NACK");
+				if(MAX_RETRIES == ++retries) {
+					ERR("Max. transmission retries ("+str(retries)+") reached. Giving up");
+					break;
+				}
+				DBG("Resending #" + str(blk));
+				goto retransmit;
+				
+			case XMODEM_ACK:
+				DBG("ACK");
+				return true;
+				
+			default:
+				DBG("Got unknown reply");
+				break;
+		}
+	} 
+	
+	return false;
+}
+
+
+bool
+do_xmodem_upload(string fwfile)
+{
+	word blk, blockcnt;
+	byte i;
+	dword bc;
+	firmware fw;
+	byte *data;
+	string pkt;
+	word *temp;
+	
+/* 0x340 is a starting address of the main firmware file.
+ * The addresses 0x0 - 0x330 occupied by the monitor
+ */
+#define FW_OFFSET (0x340*sizeof(word))
+
+
+	if(!load_firmware(fwfile, &fw))
+		return false;
+
+	/* 0x340 is a start address of the firmware (not monitor!)
+	 */
+	data = (byte *)fw.data + 0x340 * sizeof(word);
+	bc = (fw.datalen - 0x340) * sizeof(word);
+	temp = (word *)data;
+	
+	blockcnt = bc / XMODEM_PACKET_SIZE;
+	if(bc % XMODEM_PACKET_SIZE != 0)
+		++blockcnt;
+		
+ 	/*
+	 * The receiving side is sending NACK or 'C' to indicate that it ready to 
+	 * begin data exchange. NACK means that receiver will use 1-byte CRC and
+	 * 'C' indicates that CRC expected to be 16-bits.
+	 * After that, we begin to send 132 or 133-byte packets, 
+	 * which consists of SOH marker, packet number (and 0xFF-complement byte), 
+	 * 128 bytes of data and 1 or 2 bytes of CRC	
+	 */
+	 
+	for(;;) {
+		doevents;
+		pkt = ser.getdata(255);
+		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C')
+			break;
+		else
+			return false;
+	}
+
+	DBG("Got NACK from target");
+	DBG("Transferring "+str(blockcnt)+" blocks");
+	firmware_upload_in_prog_screen();
+	for(blk=1; blk<=blockcnt; ++blk) {
+		if(!transmit_block(data, blk, blockcnt))
+			break;
+		data += XMODEM_PACKET_SIZE;
+	}
+	
+	DBG("EOT");
+	serial_send(p, chr(XMODEM_EOT));
+	
+	DBG("ETB");
+	serial_send(p, chr(XMODEM_ETB));
+
+	DBG("Success");
+		upload_successful_screen();
+	
+	return OK;
+}

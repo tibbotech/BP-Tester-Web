@@ -1,9 +1,10 @@
 include "display.tbh"
 declare sub set_id()
 dim poll_sensors as boolean=false
-dim sensor_no(10) as byte
-dim sensor_type(10) as byte
-dim sensor_data(10) as string
+dim ok_to_poll as boolean=false
+dim sensor_no(MAX_NUM_OF_SENSORS) as byte
+dim sensor_type(MAX_NUM_OF_SENSORS) as byte
+dim sensor_data(MAX_NUM_OF_SENSORS) as string
 dim x,y,z as byte=0
 dim timer as byte=0
 dim screen as byte=0
@@ -57,17 +58,22 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 			select case key_code
 			case 0:
 				poll_sensors=false
-				wait_screen()
+				scanning_sensors_screen()
 				lcd_scan()
+				ok_to_poll=true
 			case 1:
-				poll_sensors=true
+				if ok_to_poll=true then
+					poll_sensors=true
+				end if
 			case 2:
 				poll_sensors=false
-				upload_firmware_screen()				 
+				ok_to_poll=false
+				upload_firmware_screen()
 				screen=1
 			case 3:
 				poll_sensors=false
-				set_id_screen()				
+				ok_to_poll=false
+				set_id_screen()		
 				screen=2
 				
 			end select
@@ -79,7 +85,7 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 				home_screen()
 				screen=0
 			case 3:
-				upload_firmware()
+				upload_firmware()	
 			end select
 	
 	
@@ -87,17 +93,19 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 			select case key_code
 			case 0:
 				home_screen()
-				
 				screen=0
 			case 1:
-				if id>1 then
+				if id>MIN_SENSOR_ID_NUM then
 					id=id-1
+				else 
+					id=MAX_SENSOR_ID_NUM
 				end if
-				
 				change_id()
 			case 2:
-				if id<247 then
+				if id<MAX_SENSOR_ID_NUM then
 					id=id+1
+				else
+					id=MIN_SENSOR_ID_NUM
 				end if
 				change_id()
 			case 3:
@@ -107,7 +115,6 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 		
 	end if
 	
-	sys.debugprint("Poll Sensor:" + stri(poll_sensors) + "\r\n")
 	
 end sub
 
@@ -156,6 +163,7 @@ end sub
 
 sub set_id_screen()
 	
+	id=1
 	lcd.lock
 	
 	lcd.forecolor=0
@@ -230,17 +238,21 @@ end sub
 'Prints properties screen and sets LED.
 
 sub lcd_scan()
+	kp.enabled=NO
 	dim b as byte=0
+	dim percent as word
 	x=0
 	y=0
 	z=0
 	
 
-	for b=1 to 10
+	for b=MIN_SENSOR_ID_NUM to MAX_SENSOR_ID_NUM
+		percent = (b*100)/MAX_SENSOR_ID_NUM
+		update_scanning_sensors_screen(percent)
 		scan_sensors(b)
 	next b
 	
-	for b=0 to 9 
+	for b=0 to MAX_NUM_OF_SENSORS-1
 		if sensor_no(b)<>0 then
 			get_sensor_type(sensor_no(b))
 		end if
@@ -249,10 +261,10 @@ sub lcd_scan()
 	home_screen()
 	lcd.lock
 	
-	for b=0 to 9 
+	for b=0 to MAX_NUM_OF_SENSORS-1
 		if sensor_no(b)<>0 then
 			lcd.print(str(sensor_no(b)),10,90+(20*b))
-			lcd.print(str(sensor_data(b)),190,90+(20*b))
+			lcd.print("0",190,90+(20*b))
 			select case sensor_type(b)
 			case 1:lcd.print("Temp",70,90+(20*b))
 			case 2:lcd.print("Temp/Hum",70,90+(20*b))
@@ -262,7 +274,7 @@ sub lcd_scan()
 	next b
 	
 	lcd.unlock
-
+	kp.enabled=YES
 end sub
 
 sub lcd_poll()
@@ -272,7 +284,7 @@ sub lcd_poll()
 	y=0
 	z=0
 	
-	for b=0 to 9 
+	for b=0 to MAX_NUM_OF_SENSORS-1
 		if sensor_no(b)<>0 then
 			get_sensor_data(sensor_no(b),sensor_type(b))
 		end if
@@ -283,7 +295,7 @@ sub lcd_poll()
 	lcd.forecolor=0
 	lcd.fill(190,90,120,130)
 	lcd.forecolor=65535
-	for b=0 to 9 
+	for b=0 to MAX_NUM_OF_SENSORS-1
 		if sensor_no(b)<>0 then
 			lcd.print(str(sensor_no(b)),10,90+(20*b))
 			lcd.print(str(sensor_data(b)),190,90+(20*b))
@@ -353,7 +365,7 @@ sub delay_mls(ms as dword)
 
 end sub
 
-sub wait_screen()
+sub scanning_sensors_screen()
 	
 	lcd.forecolor=0
 	lcd.fill(0,0,lcd.width,lcd.height)
@@ -361,10 +373,53 @@ sub wait_screen()
 	lcd.forecolor=65535 
 	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
 	lcd.print("Scanning for sensors",60,100)
-	lcd.print("Please wait",105,130)
 	
 end sub
 
+
+sub update_scanning_sensors_screen(percent as word)
+	if percent<10 then
+		lcd.print(str(percent) +"% complete",105,130)
+	else
+		lcd.print(str(percent) +"% complete",95,130)
+	end if
+end sub
+
+sub firmware_upload_in_prog_screen()
+
+	lcd.forecolor=0
+	lcd.fill(0,0,lcd.width,lcd.height)
+	lcd.backcolor=0
+	lcd.forecolor=65535 
+	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
+	lcd.print("Uploading Firmware",70,100)
+
+end sub
+
+sub update_firmware_upload_screen(currentpack as word, totalpacks as word)
+	dim percent as word
+	percent = (currentpack*100)/totalpacks
+	if percent<10 then
+		lcd.print(str(percent) +"% complete",105,130)
+	else
+		lcd.print(str(percent) +"% complete",95,130)
+	end if
+end sub
+
+sub upload_successful_screen()
+	
+	lcd.forecolor=0
+	lcd.fill(0,0,lcd.width,lcd.height)
+	lcd.backcolor=0
+	lcd.forecolor=65535 
+	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
+	lcd.print("Upload Successful!",80,120)
+	sys.timercountms=0
+	while sys.timercountms<3000
+	wend
+	upload_firmware_screen()
+	
+end sub
 
 sub upload_firmware_screen()
 	
@@ -389,7 +444,7 @@ sub upload_firmware_screen()
 	lcd.setfont(romfile.offset)	
 	lcd.forecolor=25544
 	lcd.print("Exit",30,227)
-	lcd.print("Restart",260,227)
+	lcd.print("Upload",260,227)
 	lcd.forecolor=65535 
 	romfile.open("logosmall.bmp")
 	lcd.bmp(romfile.offset,245,0,0,0,lcd.width,lcd.height)
@@ -399,11 +454,20 @@ sub upload_firmware_screen()
 	lcd.printaligned("2. Press and hold MD button on sensor.", 15,75,295,160)
 	lcd.printaligned("3. Connect power without releasing MD button", 15,120,295,160)
 	lcd.printaligned("4. Release the MD button.", 15,165,295,160)
+	lcd.printaligned("5. Press upload.", 15,190,295,160)
 	lcd.forecolor=0
 	lcd.unlock
 
 end sub
 
 sub upload_firmware()
+	kp.enabled=NO
+	do_xmodem_upload("Hexagons_Firmware.X.production.hex")
+	kp.enabled=YES
+end sub
+
+sub xmodem_waiting()
 	
+	
+
 end sub

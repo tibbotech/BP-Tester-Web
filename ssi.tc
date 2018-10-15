@@ -279,7 +279,7 @@ i2c_port_scan(ioport *p, byte chnl)
 }
 
 
-#if 1
+#if 0
 /* Code disabled due to inability of TiOS to do the I2C clock stretching 
  */
 void
