@@ -48,6 +48,7 @@ extern void firmware_upload_in_prog_screen();
 extern void update_firmware_upload_screen(word currentpack, word totalpacks);
 extern void upload_successful_screen();
 extern void xmodem_waiting();
+extern void upload_failed_screen();
 
 #define __GLOBAL_TH_INCLUDED__
 

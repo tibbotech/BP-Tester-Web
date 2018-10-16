@@ -3,6 +3,7 @@
 #include "modbus.th"
 #include "utils.th"
 
+bool upload_succesful=true;
 ioport *p;
 void upload_firmware();
 void
@@ -101,14 +102,6 @@ void
 scan_sensors(unsigned char w)
 
 {
-	modbus_request(p, 1, READ_HOLDING_REGISTERS, 200, 1, "");
-	sys.timercountms=0;
-	while(!modbus_finished()){
-		on_modbus_data_arrival(MODBUS_SERIAL);
-		if (sys.timercountms>100){
-		break;
-		}
-	}
 	modbus_request(p, w, READ_HOLDING_REGISTERS, 200, 1, "");
 	sys.timercountms=0;
 	while(!modbus_finished()){
@@ -417,10 +410,17 @@ transmit_block(byte *data, word blk, word blockcnt)
 
 retransmit:	
 		serial_send(p, pkt);
-		
+		sys.timercountms=0;
 		/* Check timeout */
 		do {
 			rpl = serial_recv(p, 1);
+			if(sys.timercountms>3000)
+			{
+				upload_failed_screen();
+				upload_succesful=false;
+				return false;
+			}
+				
 		} while(rpl == "");
 
 		/* Parse reply packet
@@ -489,7 +489,7 @@ do_xmodem_upload(string fwfile)
 	 */
 	 
 	for(;;) {
-		doevents;
+//		doevents;
 		pkt = ser.getdata(255);
 		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C')
 			break;
@@ -513,6 +513,7 @@ do_xmodem_upload(string fwfile)
 	serial_send(p, chr(XMODEM_ETB));
 
 	DBG("Success");
+		if (upload_succesful)  
 		upload_successful_screen();
 	
 	return OK;
