@@ -494,7 +494,7 @@ end sub
 
 sub upload_firmware()
 	kp.enabled=NO
-	do_xmodem_upload("Hexagons_Firmware.X.production.hex")
+	do_xmodem_upload("Firmware.hex")
 	kp.enabled=YES
 end sub
 
@@ -604,8 +604,5 @@ sub reset_sensors()
 		sensor_type(counter)=0
 		sensor_data(counter)=0
 	next counter
-	
-	
-	
 	
 end sub

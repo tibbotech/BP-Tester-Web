@@ -137,7 +137,7 @@ void
 get_sensor_data(unsigned char w,unsigned char x)
 {
 
-	float result;
+	string result;
 	//sensor *sens;
 	byte hi, lo;
 	word port, cnt, r1, r2, r3;
@@ -148,7 +148,8 @@ get_sensor_data(unsigned char w,unsigned char x)
 		modbus_request(p, w, READ_INPUT_REGISTERS, 300, 2, "");
 		break;
 	case 2:	//temp&hum
-		modbus_request(p, w, READ_INPUT_REGISTERS, 300, 8, "");
+		//modbus_request(p, w, READ_INPUT_REGISTERS, 300, 8, "");
+		modbus_request(p, w, READ_INPUT_REGISTERS, 304, 8, "");
 		break;
 	case 3:	//light
 		modbus_request(p, w, READ_INPUT_REGISTERS, 400, 2, "");
@@ -169,39 +170,23 @@ get_sensor_data(unsigned char w,unsigned char x)
 			case 1:
 				hi = res[5];
 				lo = res[6];
-				r1 = (hi << 8) | lo; 
-//				sens->prev[0] = sens->res[0];
-//				sens->res[0].type = TYPE_FLOAT;
-//				sens->res[0].f = (float)r1 / 16;
-				result=(float)r1/16;
-				
+				result=(string)hi;
 				break;
 
 			case 2:
 				hi = res[5];
 				lo = res[6];
-				r1 = (hi << 8) | lo; 
-//				sens->prev[0] = sens->res[0];
-//				sens->res[0].type = TYPE_FLOAT;
-//				sens->res[0].f = ((float)r1 / 16382.0) * 165 - 40;
+				result=(string)hi;
 				
 				hi = res[13];
 				lo = res[14];
-				r2 = (hi << 8) | lo;
-//				sens->prev[1] = sens->res[1];
-//				sens->res[1].type = TYPE_FLOAT;
-//				sens->res[1].f = ((float)r2 / 16382.0) * 100;
-				result=((float)r2 / 16382.0) * 100;
 				break;
 			
 			case 3:
-				hi = res[6];
-				lo = res[5];
+				hi = res[5];
+				lo = res[6];
 				r1 = (hi << 8) | lo; 
-//				sens->prev[0] = sens->res[0];
-//				sens->res[0].type = TYPE_LONG;
-//				sens->res[0].l = (long)((float)r1 * 0.833333333);
-				result=(long)((float)r1 * 0.833333333);
+				result=(string)hi;
 			
 				break;
 			
@@ -263,7 +248,7 @@ load_firmware(string name, firmware *fw)
 
 	lba = 0;
 	p = 0;
-	
+
 	for(;;) {
 		/* Find Start-Of-Record mark */
 		p = romfile.find32(p, ":", 1);
@@ -465,14 +450,13 @@ do_xmodem_upload(string fwfile)
  */
 #define FW_OFFSET (0x340*sizeof(word))
 
-
-	if(!load_firmware(fwfile, &fw))
-		return false;
-
+	romfile.open(fwfile);
+    unsigned long ptr = romfile.pointer32;
+	unsigned long fwsize = romfile.size;
 	/* 0x340 is a start address of the firmware (not monitor!)
 	 */
-	data = (byte *)fw.data + 0x340 * sizeof(word);
-	bc = (fw.datalen - 0x340) * sizeof(word);
+	data = (byte *)ptr + 0x340 * sizeof(word);
+	bc =   fwsize  - (0x340) * sizeof(word);
 	temp = (word *)data;
 	
 	blockcnt = bc / XMODEM_PACKET_SIZE;
@@ -489,7 +473,6 @@ do_xmodem_upload(string fwfile)
 	 */
 	 
 	for(;;) {
-//		doevents;
 		pkt = ser.getdata(255);
 		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C')
 			break;
