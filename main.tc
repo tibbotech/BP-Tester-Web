@@ -119,7 +119,7 @@ void
 get_sensor_type(unsigned char w)
 {
 	string result;
-	modbus_request(p, w, READ_INPUT_REGISTERS, 201, 1, "");
+	modbus_request(p, w, READ_HOLDING_REGISTERS, 200, 4, "");
 	sys.timercountms=0;
 	while(!modbus_finished()){
 		on_modbus_data_arrival(MODBUS_SERIAL);
@@ -148,8 +148,9 @@ get_sensor_data(unsigned char w,unsigned char x)
 		modbus_request(p, w, READ_INPUT_REGISTERS, 300, 2, "");
 		break;
 	case 2:	//temp&hum
+		modbus_request(p, w, READ_INPUT_REGISTERS, 400, 8, "");
 		//modbus_request(p, w, READ_INPUT_REGISTERS, 300, 8, "");
-		modbus_request(p, w, READ_INPUT_REGISTERS, 304, 8, "");
+		//modbus_request(p, w, READ_INPUT_REGISTERS, 304, 8, "");
 		break;
 	case 3:	//light
 		modbus_request(p, w, READ_INPUT_REGISTERS, 400, 2, "");
@@ -164,37 +165,37 @@ get_sensor_data(unsigned char w,unsigned char x)
 		break;
 		}
 	}
-	res = modbus_result();
-	if(res != "") {
-		switch(x) {
-			case 1:
-				hi = res[5];
-				lo = res[6];
-				result=(string)hi;
-				break;
+	result = modbus_result();
+//	if(res != "") {
+//		switch(x) {
+//			case 1:
+//				hi = res[5];
+//				lo = res[6];
+//				result=(string)hi;
+//				break;
 
-			case 2:
-				hi = res[5];
-				lo = res[6];
-				result=(string)hi;
+//			case 2:
+//				hi = res[5];
+//				lo = res[6];
+//				result=(string)hi;
 				
-				hi = res[13];
-				lo = res[14];
-				break;
+//				hi = res[13];
+//				lo = res[14];
+//				break;
 			
-			case 3:
-				hi = res[5];
-				lo = res[6];
-				r1 = (hi << 8) | lo; 
-				result=(string)hi;
+//			case 3:
+//				hi = res[5];
+//				lo = res[6];
+//				r1 = (hi << 8) | lo; 
+//				result=(string)hi;
 			
-				break;
+//				break;
 			
 			
-			default:
-				return;
-		}
-	}
+//			default:
+//				return;
+//		}
+//	}
 	
 	//result=result[4];
 	set_sensor_data(str(result));
@@ -473,6 +474,7 @@ do_xmodem_upload(string fwfile)
 	 */
 	 
 	for(;;) {
+		doevents;
 		pkt = ser.getdata(255);
 		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C')
 			break;
