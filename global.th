@@ -39,6 +39,7 @@ typedef struct _sensor {
 #endif
 
 extern void lcd_init();
+extern void get_response();
 extern void print_properties();
 extern void set_sensor_id(byte id);
 extern void set_sensor_type(byte stype);
@@ -49,6 +50,7 @@ extern void update_firmware_upload_screen(word currentpack, word totalpacks);
 extern void upload_successful_screen();
 extern void xmodem_waiting();
 extern void upload_failed_screen();
+extern void duplicate_id_screen();
 
 #define __GLOBAL_TH_INCLUDED__
 

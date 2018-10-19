@@ -255,6 +255,10 @@ sub lcd_scan()
 	for b=MIN_SENSOR_ID_NUM to MAX_SENSOR_ID_NUM
 		percent = (b*100)/MAX_SENSOR_ID_NUM
 		update_scanning_sensors_screen(percent)
+		if x>=MAX_NUM_OF_SENSORS then
+			max_sensors_screen()
+			exit for
+		end if
 		scan_sensors(b)
 	next b
 	
@@ -272,8 +276,8 @@ sub lcd_scan()
 			lcd.print(str(sensor_no(b)),10,90+(20*b))
 			lcd.print("0",190,90+(20*b))
 			select case sensor_type(b)
-			case 1:lcd.print("Temp",70,90+(20*b))
-			case 2:lcd.print("Temp/Hum",70,90+(20*b))
+			case 1:lcd.print("Temp/Hum",70,90+(20*b))
+			case 2:lcd.print("Temp",70,90+(20*b))
 			case 3:lcd.print("Light",70,90+(20*b))
 			end select
 		end if
@@ -286,7 +290,7 @@ end sub
 
 sub lcd_poll()
 	
-	dim b as byte=0
+	dim b,c as byte=0
 	x=0
 	y=0
 	z=0
@@ -307,9 +311,28 @@ sub lcd_poll()
 			lcd.print(str(sensor_no(b)),10,90+(20*b))
 			lcd.print(str(sensor_data(b)),190,90+(20*b))
 			select case sensor_type(b)
-			case 1:lcd.print("Temp",70,90+(20*b))
-			case 2:lcd.print("Temp/Hum",70,90+(20*b))
-			case 3:lcd.print("Light",70,90+(20*b))
+			case 1:
+				lcd.print("Temp/Hum",70,90+(20*b))
+				if sensor_data(b)="" then
+					lcd.print("Offline",190,90+(20*b))
+				else
+					c=instr(1,sensor_data(b),"x",1)
+					lcd.print(left(sensor_data(b),c-1)+ "C " + right(sensor_data(b),len(sensor_data(b))-c) + "%",190,90+(20*b))
+				end if				
+			case 2:
+				lcd.print("Temp",70,90+(20*b))
+				if sensor_data(b)="" then
+					lcd.print("Offline",190,90+(20*b))
+				else
+					lcd.print(sensor_data(b)+ "C",190,90+(20*b))
+				end if
+			case 3:
+				lcd.print("Light",70,90+(20*b))
+				if sensor_data(b)="" then
+					lcd.print("Offline",190,90+(20*b))
+				else
+					lcd.print(sensor_data(b)+ " lx",190,90+(20*b))
+				end if
 			end select
 			
 		end if
@@ -453,6 +476,38 @@ sub scan_successful_screen()
 	
 end sub
 
+sub max_sensors_screen()
+	set_LED(&b11111)
+	lcd.forecolor=0
+	lcd.fill(0,0,lcd.width,lcd.height)
+	lcd.backcolor=0
+	lcd.forecolor=65535 
+	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
+	lcd.print("Maximum number of sensors",30,85)
+	lcd.print("detected!",115,110)
+	lcd.print("Stopping scan!",95,150)
+	sys.timercountms=0
+	while sys.timercountms<1000
+	wend
+		
+end sub
+
+sub duplicate_id_screen()
+	set_LED(&b11111)
+	lcd.forecolor=0
+	lcd.fill(0,0,lcd.width,lcd.height)
+	lcd.backcolor=0
+	lcd.forecolor=65535 
+	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
+	lcd.print("Duplicate slave IDs detected!",30,85)
+	lcd.print("Please ensure all slaves have",115,125)
+	lcd.print("Unique IDs!",95,150)
+	sys.timercountms=0
+	while sys.timercountms<1000
+	wend
+		
+end sub
+
 sub upload_firmware_screen()
 	
 	lcd.lock
@@ -494,7 +549,7 @@ end sub
 
 sub upload_firmware()
 	kp.enabled=NO
-	do_xmodem_upload("HexagonFirmwareOld.bin")
+	do_xmodem_upload("Firmware.hex")
 	kp.enabled=YES
 end sub
 

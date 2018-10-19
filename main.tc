@@ -62,14 +62,7 @@ process_request()
 		return str(newaddr); 
 	} else if(rqtype == "Get") {
 		modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
-		 
-		sys.timercountms=0;
-	while(!modbus_finished()){
-		on_modbus_data_arrival(MODBUS_SERIAL);
-		if (sys.timercountms>100){
-		break;
-		}
-	}
+		get_response();
 		
 		snewaddr = modbus_result();
 		
@@ -87,13 +80,7 @@ get_id()
 	newaddr = val(snewaddr);
 	//modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
 	modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
-	sys.timercountms=0;
-	while(!modbus_finished()){
-		on_modbus_data_arrival(MODBUS_SERIAL);
-		if (sys.timercountms>100){
-		break;
-		}
-	}
+	get_response();
 	snewaddr = modbus_result();
 	return snewaddr[4];
 }
@@ -102,14 +89,8 @@ void
 scan_sensors(unsigned char w)
 
 {
-	modbus_request(p, w, READ_HOLDING_REGISTERS, 200, 1, "");
-	sys.timercountms=0;
-	while(!modbus_finished()){
-		on_modbus_data_arrival(MODBUS_SERIAL);
-		if (sys.timercountms>100){
-		break;
-		}
-	}
+	modbus_request(p, w, READ_HOLDING_REGISTERS, 200, 4, "");
+	get_response();
 	if (modbus_finished()){
 		set_sensor_id(w);
 	}
@@ -119,14 +100,8 @@ void
 get_sensor_type(unsigned char w)
 {
 	string result;
-	modbus_request(p, w, READ_HOLDING_REGISTERS, 200, 4, "");
-	sys.timercountms=0;
-	while(!modbus_finished()){
-		on_modbus_data_arrival(MODBUS_SERIAL);
-		if (sys.timercountms>100){
-		break;
-		}
-	}
+	modbus_request(p, w, READ_INPUT_REGISTERS, 201, 1, "");
+	get_response();
 	result = modbus_result();
 	result=result[4];
 	set_sensor_type(result);
@@ -138,67 +113,79 @@ get_sensor_data(unsigned char w,unsigned char x)
 {
 
 	string result;
+	string hum;
 	//sensor *sens;
 	byte hi, lo;
 	word port, cnt, r1, r2, r3;
 
 	string res;
 	switch(x){
-	case 1:	//temp
-		modbus_request(p, w, READ_INPUT_REGISTERS, 300, 2, "");
+	case 1:	//temp&hum
+		modbus_request(p, w, READ_INPUT_REGISTERS, 400, 1, "");
 		break;
-	case 2:	//temp&hum
-		modbus_request(p, w, READ_INPUT_REGISTERS, 400, 8, "");
-		//modbus_request(p, w, READ_INPUT_REGISTERS, 300, 8, "");
-		//modbus_request(p, w, READ_INPUT_REGISTERS, 304, 8, "");
+	case 2:	//temp
+		modbus_request(p, w, READ_INPUT_REGISTERS, 300, 1, "");
 		break;
 	case 3:	//light
-		modbus_request(p, w, READ_INPUT_REGISTERS, 400, 2, "");
+		modbus_request(p, w, READ_INPUT_REGISTERS, 500, 1, "");
 		break;
 	default:
 
 	}
-	sys.timercountms=0;
-	while(!modbus_finished()){
-		on_modbus_data_arrival(MODBUS_SERIAL);
-		if (sys.timercountms>100){
-		break;
+	get_response();
+	res = modbus_result();
+	if(res != "") {
+			switch(x) {
+				case 1:
+					hi = res[3];
+					lo = res[4];
+					result=hex(hi)+right(hex(lo),2);
+					result=val(result);
+					result=left(result,len(result)-1)+"."+right(result,1);
+					if (len(result)<=2){
+					result="0"+result;
+					}
+					modbus_request(p, w, READ_INPUT_REGISTERS, 404, 1, "");
+					get_response();
+					res = modbus_result();
+					hi = res[3];
+					lo = res[4];
+					hum=hex(hi)+right(hex(lo),2);
+					hum=val(hum);
+					hum=left(hum,len(hum)-1)+"."+right(hum,1);
+					if (len(hum)<=2){
+						hum="0"+hum;
+					};
+					result=result+"x"+hum;
+					break;
+
+				case 2:
+					hi = res[3];
+					lo = res[4];
+					result=hex(hi)+right(hex(lo),2);
+					result=val(result);
+					result=left(result,len(result)-2)+"."+right(result,2);
+					if (len(result)<=3){
+					result="0"+result;
+					}
+					break;
+				
+				case 3:
+					hi = res[3];
+					lo = res[4];
+					result=hex(hi)+right(hex(lo),2);
+					result=val(result);
+					result=result;
+					
+					break;
+			
+				default:
+					return;
 		}
 	}
-	result = modbus_result();
-//	if(res != "") {
-//		switch(x) {
-//			case 1:
-//				hi = res[5];
-//				lo = res[6];
-//				result=(string)hi;
-//				break;
-
-//			case 2:
-//				hi = res[5];
-//				lo = res[6];
-//				result=(string)hi;
-				
-//				hi = res[13];
-//				lo = res[14];
-//				break;
-			
-//			case 3:
-//				hi = res[5];
-//				lo = res[6];
-//				r1 = (hi << 8) | lo; 
-//				result=(string)hi;
-			
-//				break;
-			
-			
-//			default:
-//				return;
-//		}
-//	}
 	
 	//result=result[4];
-	set_sensor_data(str(result));
+	set_sensor_data(result);
 		
 }
 
@@ -456,8 +443,8 @@ do_xmodem_upload(string fwfile)
 	unsigned long fwsize = romfile.size;
 	/* 0x340 is a start address of the firmware (not monitor!)
 	 */
-	data = (byte *)ptr + 0x340 * sizeof(word);
-	bc =   fwsize  - (0x340) * sizeof(word);
+	data = (byte *)ptr;
+	bc =   fwsize;
 	temp = (word *)data;
 	
 	blockcnt = bc / XMODEM_PACKET_SIZE;
@@ -474,7 +461,6 @@ do_xmodem_upload(string fwfile)
 	 */
 	 
 	for(;;) {
-		doevents;
 		pkt = ser.getdata(255);
 		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C')
 			break;
@@ -502,4 +488,16 @@ do_xmodem_upload(string fwfile)
 		upload_successful_screen();
 	
 	return OK;
+}
+
+void get_response(){
+	
+	sys.timercountms=0;
+	while(!modbus_finished()){
+		on_modbus_data_arrival(MODBUS_SERIAL);
+		if (sys.timercountms>100){
+		break;
+		}
+	}
+
 }

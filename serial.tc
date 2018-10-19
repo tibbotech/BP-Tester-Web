@@ -103,7 +103,7 @@ serial_setup(ioport *p)
 	if(p->type == IO_RS485) {
 		ser.flowcontrol = PL_SER_FC_DISABLED;
 		ser.interface = PL_SER_SI_HALFDUPLEX;
-		serial_set_rate(p, R_19200);
+		serial_set_rate(p, R_38400);
 	} else {
 		ser.flowcontrol = PL_SER_FC_RTSCTS;
 		ser.interface = PL_SER_SI_FULLDUPLEX;
