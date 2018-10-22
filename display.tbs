@@ -1,12 +1,12 @@
 include "display.tbh"
 
-dim MAX_NUM_OF_SENSORS as byte = 6
-dim MAX_SENSOR_ID_NUM as byte = 10
+dim MAX_NUM_OF_SENSORS as byte = 20
+dim MAX_SENSOR_ID_NUM as byte = 20
 dim MIN_SENSOR_ID_NUM as byte = 1
 
-dim sensor_no(6) as byte
-dim sensor_type(6) as byte
-dim sensor_data(6) as string
+dim sensor_no(20) as byte
+dim sensor_type(20) as byte
+dim sensor_data(20) as string
 
 declare sub set_id()
 dim poll_sensors as boolean=false
@@ -19,6 +19,9 @@ dim timer as byte=0
 dim screen as byte=0
 dim id as byte = 1
 dim LED as byte=0
+dim total_detected_sensors as byte=0
+dim total_num_pages as byte=0
+dim current_page as byte=0
 
 'Initializes LCD screen
 
@@ -267,11 +270,11 @@ sub lcd_scan()
 			get_sensor_type(sensor_no(b))
 		end if
 	next b	
-	
+	total_detected_sensors=x
 	scan_successful_screen()
 	lcd.lock
 	
-	for b=0 to MAX_NUM_OF_SENSORS-1
+	for b=0 to 5
 		if sensor_no(b)<>0 then
 			lcd.print(str(sensor_no(b)),10,90+(20*b))
 			lcd.print("0",190,90+(20*b))
@@ -283,6 +286,12 @@ sub lcd_scan()
 		end if
 	next b
 	
+	if total_detected_sensors mod 6=0 then
+		total_num_pages=total_detected_sensors/6
+	else 
+		total_num_pages=(total_detected_sensors/6)+1
+	end if
+	
 	lcd.unlock
 	kp.enabled=YES
 	set_LED(&b00000)
@@ -291,11 +300,12 @@ end sub
 sub lcd_poll()
 	
 	dim b,c as byte=0
-	x=0
-	y=0
-	z=0
+	dim start_index as byte = current_page * 6
+	x=start_index
+	y=start_index
+	z=start_index
 	
-	for b=0 to MAX_NUM_OF_SENSORS-1
+	for b=start_index to start_index+5
 		if sensor_no(b)<>0 then
 			get_sensor_data(sensor_no(b),sensor_type(b))
 		end if
@@ -306,36 +316,39 @@ sub lcd_poll()
 	lcd.forecolor=0
 	lcd.fill(190,90,120,130)
 	lcd.forecolor=65535
-	for b=0 to MAX_NUM_OF_SENSORS-1
+	
+	dim position as byte = 0
+	for b=start_index to start_index+5
+		
 		if sensor_no(b)<>0 then
-			lcd.print(str(sensor_no(b)),10,90+(20*b))
-			lcd.print(str(sensor_data(b)),190,90+(20*b))
+			lcd.print(str(sensor_no(b)),10,90+(20*position))
+			lcd.print(str(sensor_data(b)),190,90+(20*position))
 			select case sensor_type(b)
 			case 1:
-				lcd.print("Temp/Hum",70,90+(20*b))
+				lcd.print("Temp/Hum",70,90+(20*position))
 				if sensor_data(b)="" then
-					lcd.print("Offline",190,90+(20*b))
+					lcd.print("Offline",190,90+(20*position))
 				else
 					c=instr(1,sensor_data(b),"x",1)
-					lcd.print(left(sensor_data(b),c-1)+ "C " + right(sensor_data(b),len(sensor_data(b))-c) + "%",190,90+(20*b))
+					lcd.print(left(sensor_data(b),c-1)+ "C " + right(sensor_data(b),len(sensor_data(b))-c) + "%",190,90+(20*position))
 				end if				
 			case 2:
-				lcd.print("Temp",70,90+(20*b))
+				lcd.print("Temp",70,90+(20*position))
 				if sensor_data(b)="" then
-					lcd.print("Offline",190,90+(20*b))
+					lcd.print("Offline",190,90+(20*position))
 				else
-					lcd.print(sensor_data(b)+ "C",190,90+(20*b))
+					lcd.print(sensor_data(b)+ "C",190,90+(20*position))
 				end if
 			case 3:
-				lcd.print("Light",70,90+(20*b))
+				lcd.print("Light",70,90+(20*position))
 				if sensor_data(b)="" then
-					lcd.print("Offline",190,90+(20*b))
+					lcd.print("Offline",190,90+(20*position))
 				else
-					lcd.print(sensor_data(b)+ " lx",190,90+(20*b))
+					lcd.print(sensor_data(b)+ " lx",190,90+(20*position))
 				end if
 			end select
-			
 		end if
+	position=position+1
 	next b
 	lcd.unlock
 end sub
@@ -371,6 +384,20 @@ sub set_sensor_id(id as byte)
 	sensor_no(x)=id
 	x=x+1
 
+end sub
+
+sub on_button_pressed()
+	
+	if current_page<total_num_pages-1 then
+		current_page=current_page+1
+	else
+		current_page=0
+	end if
+	
+	lcd.forecolor=456
+	lcd.fill(45,180,60,30)
+	lcd.forecolor=65535	
+	
 end sub
 
 sub set_sensor_type(stype as byte)

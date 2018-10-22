@@ -499,5 +499,4 @@ void get_response(){
 		break;
 		}
 	}
-
 }

@@ -269,9 +269,12 @@ on_modbus_data_arrival(modbus_source src)
 		_pdu_len = _packet[2] + 5; // Byte count, including slave address, crc, byte length and function code
 		if(len(_packet) >= _pdu_len) {
 			DBG(hexdump((byte *)&_packet[0], _pdu_len) + "\r\n");
-			_state = MODBUS_FINISHED;
-			//ADD CALLBACK HERE 
-			
+			//char c = "&hFF" 
+			string c1 = _packet[9];
+			string c2 = _packet[10];
+			if(c1=="-86"  && c2=="85"){	
+				_state = MODBUS_FINISHED;			
+			}
 		}
 	}
 }
