@@ -1,11 +1,3 @@
-'#define MAX_NUM_OF_SENSORS 6
-'#define MAX_SENSOR_ID_NUM 10
-'#define MIN_SENSOR_ID_NUM 1
-
-declare MAX_NUM_OF_SENSORS as byte = 6
-declare MAX_SENSOR_ID_NUM as byte = 10
-declare MIN_SENSOR_ID_NUM as byte = 1
-
 declare sub modbus_init()
 declare sub home_screen()
 declare sub lcd_scan()
@@ -22,7 +14,6 @@ declare sub get_sensor_type(id as byte)
 declare sub get_sensor_data(id as byte, stype as byte)
 declare sub set_id_screen()
 declare sub change_id()
-declare sub delay_mls(ms as dword)
 declare sub scanning_sensors_screen()
 declare sub update_scanning_sensors_screen(percent as word)
 declare sub update_firmware_upload_screen(currentpack as word, totalpacks as word)
@@ -31,18 +22,11 @@ declare sub upload_firmware_screen()
 declare sub firmware_upload_in_prog_screen()
 declare sub upload_successful_screen()
 declare sub scan_successful_screen()
-declare sub upload_firmware()
 declare sub reprogram_address(oldaddr as byte, newaddr as byte)
-declare function getPPointerValue() as dword
-declare function process_request() as string
 declare sub do_xmodem_upload(fwfile as string)
-declare sub xmodem_waiting()
 declare sub set_LED(pattern as byte)
 declare sub led_upload_pattern()
 declare sub led_download_pattern()
-declare sub modbus_request2(ptr as dword,  devaddr as byte,  request as byte,  start as word, count as  word,  regdata as string)
 declare sub upload_failed_screen()
 declare sub clear_line(position as word)
 declare sub clear_screen()
-
-declare function get_id() as byte

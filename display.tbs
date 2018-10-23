@@ -8,7 +8,6 @@ dim sensor_no(147) as byte
 dim sensor_type(147) as byte
 dim sensor_data(147) as string
 
-declare sub set_id()
 dim poll_sensors as boolean=false
 dim ok_to_poll as boolean=false
 
@@ -102,9 +101,10 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 				home_screen()
 				screen=0
 			case 3:
-				upload_firmware()	
+					kp.enabled=NO
+					do_xmodem_upload("MonitorUpdater.bin")
+					kp.enabled=YES
 			end select
-	
 	
 		else if screen=2 then
 			select case key_code
@@ -140,7 +140,6 @@ end sub
 sub home_screen()
 	
 	lcd.lock
-	
 	clear_screen()
 	romfile.open("11x19(HP).bin")
 	lcd.setfont(romfile.offset)
@@ -213,6 +212,7 @@ sub set_id_screen()
 end sub
 
 sub change_id()
+
 	lcd.forecolor=0
 	lcd.fill(45,180,60,30)
 	lcd.forecolor=65535
@@ -220,6 +220,7 @@ sub change_id()
 	lcd.forecolor=val("&b"+strgen(lcd.greenbits/&hFF,"1")+strgen(lcd.greenbits And &hFF,"0"))
 	lcd.print(str(id),45,180)
 	lcd.forecolor=0	
+	
 end sub
 
 sub on_sys_timer()
@@ -295,10 +296,7 @@ sub lcd_poll()
 			get_sensor_data(sensor_no(b),sensor_type(b))
 		end if
 	next b	
-	
-		
-
-	
+				
 	dim position as word = 0
 	for b=start_index to start_index+5
 		
@@ -335,8 +333,9 @@ sub lcd_poll()
 		end if
 	position=position+1
 	next b
-	lcd.print(str(current_page+1)+"/"+str(total_num_pages),280,12)
+	lcd.print("Page "+ str(current_page+1)+"/"+str(total_num_pages),227,12)
 	lcd.unlock
+	
 end sub
 
 sub clear_line(position as word)
@@ -347,37 +346,11 @@ sub clear_line(position as word)
 		
 end sub
 
-'dim pval as dword
-'sub set_id()
-	
-'	lcd.lock
-	
-'	lcd.forecolor=0
-'	lcd.fill(0,0,lcd.width,lcd.height)
-'	lcd.backcolor=0
-'	lcd.forecolor=65535 
-'	romfile.open("11x19(HP).bin")
-'	lcd.setfont(romfile.offset)
-'	lcd.print("SET ID",100,50)
-'	'modbus_request(p, 0, READ_HOLDING_REGISTERS, 200, 1, "");
-''	modbus_init()
-''	pval = getPPointerValue()
-''	modbus_request2(pval, 0, 3, 200, 1, "")
-
-
-
-	
-'	lcd.print(get_id(),5,90)
-
-'	lcd.unlock
-
-'end sub
-
 sub set_sensor_id(id as byte)
 
-	sensor_no(x)=id
+sensor_no(x)=id
 	x=x+1
-
+	
 end sub
 
 sub on_button_pressed()
@@ -412,14 +385,6 @@ sub set_sensor_data(data as string)
 
 end sub
 	
-sub delay_mls(ms as dword)
-
-	sys.timercountms = 0
-	while sys.timercountms < ms
-	wend	
-
-end sub
-
 sub scanning_sensors_screen()
 	
 	clear_screen()
@@ -506,18 +471,18 @@ sub max_sensors_screen()
 		
 end sub
 
-sub duplicate_id_screen()
-	set_LED(&b11111)
-	clear_screen()
-	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
-	lcd.print("Duplicate slave IDs detected!",30,85)
-	lcd.print("Please ensure all slaves have",115,125)
-	lcd.print("Unique IDs!",95,150)
-	sys.timercountms=0
-	while sys.timercountms<1000
-	wend
+'sub duplicate_id_screen()
+'	set_LED(&b11111)
+'	clear_screen()
+'	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
+'	lcd.print("Duplicate slave IDs detected!",30,85)
+'	lcd.print("Please ensure all slaves have",115,125)
+'	lcd.print("Unique IDs!",95,150)
+'	sys.timercountms=0
+'	while sys.timercountms<1000
+'	wend
 		
-end sub
+'end sub
 
 sub upload_firmware_screen()
 	
@@ -554,11 +519,6 @@ sub upload_firmware_screen()
 
 end sub
 
-sub upload_firmware()
-	kp.enabled=NO
-	do_xmodem_upload("Firmware.hex")
-	kp.enabled=YES
-end sub
 
 'Sets LED pattern. Different pattern used for each different screen.
 
@@ -672,4 +632,10 @@ sub clear_screen()
 	lcd.backcolor=0
 	lcd.forecolor=65535 
 	
+end sub
+
+sub delay_ms(ms as dword)
+	sys.timercountms = 0
+	while sys.timercountms < ms
+	wend	
 end sub

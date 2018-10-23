@@ -1,70 +1,123 @@
 #ifndef __TPS_HAL_INCLUDED__
 #define __TPS_HAL_INCLUDED__
-
-
-/*! \file hal.th
- * \brief Simple Hardware Abstraction Layer for TPS2 and TPS3 (including G2) boards
- *
- * (c) 2016 Tibbo Technology, Inc.
- */
- 
-
 #include "global.th"
-#include "tibbits.th"
+
+enum tibbit
+{
+	TB_NONE = 0,				//!< No tibbit
+	TB_00_1,					//!< Four direct IO lines
+	TB_00_2,					//!< Three direct IO lines and ground
+	TB_00_3,					//!< Two direct IO lines, +5V power, ground
+	TB_01,						//!< Four-line RS-232 port
+	TB_02,						//!< RS232/422/485 port
+	TB_03_1,					//!< Two low-power relays (configuration 1)
+	TB_03_2,					//!< Two low-power relays (configuration 2)
+	TB_04_1,					//!< Two isolated inputs
+	TB_04_2,					//!< Three isolated inputs, common (-)
+	TB_04_3,					//!< Three isolated inputs, common (+)
+	TB_04_4,					//!< Four opto-inputs, common ground
+	TB_04_5,					//!< Two isolated inputs, 24V
+	TB_04_6,					//!< Three isolated inputs, common (-), 24V
+	TB_04_7,					//!< Three isolated inputs, common (+), 24V
+	TB_04_8,					//!< Four opto-inputs, common ground, 24V
+	TB_05,						//!< RS485 port
+	TB_06,						//!< Two high-power relays
+	TB_07,						//!< Two solid state relays
+	TB_08,						//!< Wiegand and clock/data reader port
+	TB_09, 						//!< Low-power 5V supply, 12V input
+	TB_10,						//!< Medium-power 5V supply, 12V input
+	TB_11,						//!< Four open collector outputs
+	TB_12,						//!< Low-power +15/-15V power supply, 5V input
+	TB_13,						//!< Four-channel ADC
+	TB_14,						//!< Four-channel DAC
+	TB_15,						//!< High-voltage AC solid state relay
+	TB_16, 						//!< Three PWMs with open collector outputs
+	TB_17,						//!< Three PWMs with power outputs
+/* Tibbits below is just connectors */
+	TB_18, 						//!< Power input
+	TB_19,						//!< DB9M connector
+	TB_20, 						//!< Nine terminal blocks
+	TB_21,						//!< Four terminal blocks
+/* Normal tibbits again */	
+	TB_22,						//!< **** Non-isolated PoE (NOT YET AVAILABLE)
+	TB_23,						//!< Isolated PoE power supply, 5V output
+	TB_24,						//!< **** Thermocouple temperature meter
+	TB_25,						//!< High-power 5V supply, 12/24/48V input
+	TB_26,						//!< **** IR code processor (NOT YET AVAILABLE)
+	TB_27,						//!< **** IR receiver/transmitter (NOT YET AVAILABLE)
+	TB_28,						//!< Ambient light sensor
+	TB_29,						//!< Ambient temperature meter
+	TB_30,						//!< Ambient humidity meter
+	TB_31,						//!< PIC coprocessor
+	TB_32,						//!< Reserved
+	TB_33,						//!< Reserved
+	TB_34,						//!< Reserved
+	TB_35,						//!< Barometric pressure sensor
+	TB_36,						//!< 3-axis accelerometer
+	TB_37,						//!< RF connector
+/* Tibbits below is buttons and LEDs */
+	TB_38,						//!< Pushbutton
+	TB_39_1,					//!< Large green LED (low brightness)
+	TB_39_2,					//!< Large red LED (high brightness)
+	TB_39_3, 					//!< Large yellow LED (low brightness)
+	TB_39_4,					//!< Large blue LED (high brightness)
+/* Normal tibbits again */	
+	TB_40_1,					//!< Digital potentiometer, 5KOhm
+	TB_40_2,					//!< Digital potentiometer, 10KOhm
+	TB_40_3,					//!< Digital potentiometer, 50KOhm
+	TB_40_4,					//!< Digital potentiometer, 100KOhm
+	TB_41,						//!< 8-bit port (supplied with 200mm cable)
+	TB_42,						//!< RTC and NVRAM with backup
+	TB_43,						//!< Reserved
+	TB_44,						//!< Reserved
+	TB_45,						//!< Reserved
+	TB_46,						//!< Reserved
+	TB_47,						//!< GPRS modem
+	TB_48,						//!< Audio In/Out
+	TB_49,						//!< Micro SD card slot
+	TB_50,						//!< Mini type B USB port
+	TB_51,						//!< CAN bus
+//	TB_52,						//!< Don't exists
+//	TB_53,						//!< Don't exists
+	TB_54,						//!< Four dry contact inputs
+//	TB_55,						//!< Don't exists
+	TB_56,						//!< Type A USB port
+	TB_57,						//!< FPGA
+	TB_58,						//!< Two 24V NPN isolated open collector outputs
+	TB_59,						//!< Two 24V PNP isolated open collector outputs
+/* Add new tibbits here */
+	NUM_TIBBITS
+};
 
 
-struct ioport;
-
-
-/*! \brief TPS slot number
+/*! \brief Information about Tibbit
  */
+struct tibbit_info {
+	tibbit type;				//!< Type of the Tibbit
+	unsigned char slots;		//!< Width of tibbit: 1 or 2 slots
+	unsigned char pins;			//!< Bit flag about pins used and unused by tibbit
+};
+
+
+#define TBSLOT_PIN_A_ALLOC		0x08
+#define TBSLOT_PIN_B_ALLOC		0x04
+#define TBSLOT_PIN_C_ALLOC		0x02
+#define TBSLOT_PIN_D_ALLOC		0x01
+#define TBSLOT_PINS_ALLOC		(TBSLOT_PIN_A_ALLOC|TBSLOT_PIN_B_ALLOC|TBSLOT_PIN_C_ALLOC|TBSLOT_PIN_D_ALLOC)
+#define TBSLOT_C1_OR_C2			0x10
+#define TBSLOT_PIN_B_UNUSED		0x20
+#define TBSLOT_PIN_C_UNUSED		0x40
+#define TBSLOT_PIN_D_UNUSED		0x80
+#define TBSLOT_PIN_USAGE_MASK	(TBSLOT_PIN_B_UNUSED|TBSLOT_PIN_C_UNUSED|TBSLOT_PIN_D_UNUSED)
+
+
+extern tibbit_info *tibbit_getinfo(tibbit);
+
 typedef unsigned char tbslot;
 
-
-enum serial_rate {
-	R_1200 = 0,
-	R_2400,
-	R_4800,
-	R_9600,
-	R_19200,
-	R_38400,
-	R_57600,
-	R_115200,
-	RATE_MAX
-};
-
-
-/*! \brief Serial port mode. Applicible only for Tibbit #05
- */
-enum serial_mode {
-	SM_NONE = 0,				//<! Serial port disabled/not used
-	SM_RS232,					//<! RS-232
-	SM_RS422,					//<! RS-422
-	SM_RS485					//<! RS-485
-};
-
-
-/*! \brief Serial port role
- */
 enum serial_role {
 	SR_UART = 0,				//!< No role assigned, serial ports acts like simple UART
 	SR_MODBUS,					//!< ModBus protocol is used to communicate via this port
-	SR_TIBBO,					//!< Tibbo native protocol is used to communicate via this port
-	SR_CONSOLE,					//!< This port acts like serial console, accepting commands and outputting log lines
-	SR_MODEM,					//!< Special role, only to distinguish modem tibbit from ordinary UARTs
-	ANY_ROLE
-};
-
-
-/*! \brief I2C channel descriptor
- */
-struct ssi_info {
-	char channel;				//!< SSI channel number or -1 for software emulation
-	unsigned char devid;		//!< I2C device address
-	unsigned char flags;		//!< Bit flags
-	pl_io_num scl;				//!< SPI SCL line (clock)
-	pl_io_num sda;				//!< SPI SDA line (data)
-	pl_io_num stat;				//!< 1WIRE PIC status GPIO line
 };
 
 
@@ -88,73 +141,9 @@ struct serial_info {
  */
 enum iotype {
 	IO_NONE = 0,				//!< Special type
-	IO_I2C,						//!< Inter-Integrated Circuit
-	IO_SPI,						//!< Serial Peripheral Interface
-	IO_OW,						//!< 1-Wire on PIC
-	IO_SW,						//!< Single-wire on PIC
-	IO_DC,						//!< Dry contact
-	IO_GPIO = IO_DC,			//!< Dry contact (alias)
-	IO_WC,						//!< Wet contact
-	IO_RS232,					//!< RS-232 port
-	IO_RS422,					//!< RS-422 port
 	IO_RS485,					//!< RS-485 port
-	IO_OUT,						//!< Output port: misc. relays and opto
-	IO_GPIO4,					//!< 4 lines of GPIO (for controlling right-side part of wide tibbits)
-	IO_MODEM,					//!< GPRS modem via RS-232
-	IO_RELAY,					//!< Misc. relays
-	IO_PIC_ADC,					//!< ADC on PIC
-/* Add new types here */	
 	IO_MAX_TYPE
 };
-
-
-enum ioport_option {
-	IO_SSI_HW_ACCEL = 1,		//!< Request use of SSI hardware acceleration
-	IO_SSI_HW_SPEED,			//!< Speed selection for HW SSI ports
-	IO_SERIAL_TYPE,				//!< UART / Weigand / Clock-Data selection for serial port
-	IO_SERIAL_MODE,				//!< 232-422-485 mode selector for universal serial port tibbit
-	IO_DUPLEX,					//!< Half- or Full-duplex mode selection for serial port tibbits
-	
-/* Add new options here */	
-	IO_NUM_IOPORT_OPTIONS
-};
-
-
-#define IO_FLAG_INPUT			0x01	//!< I/O port can read data
-#define IO_FLAG_OUTPUT			0x02	//!< I/O port can write data
-#define IO_FLAG_CAN_USE_SSI		0x04	//!< HW acceleration available for this port type
-#define IO_FLAG_SERIAL_PORT		0x08	//!< Port is serial port
-
-#define HAL_SSI_C0				0x80	//!< SSI channel #0
-#define HAL_SSI_C1				0x40	//!< SSI channel #1
-#define HAL_SSI_C2				0x20	//!< SSI channel #2
-#define HAL_SSI_C3				0x10	//!< SSI channel #3
-
-#define HAL_SERIAL_0			0x08	//!< UART #0
-#define HAL_SERIAL_1			0x04	//!< UART #1
-#define HAL_SERIAL_2			0x02	//!< UART #2
-#define HAL_SERIAL_3			0x01	//!< UART #3
-
-#define HAL_UART_COUNT			4		// Number of UARTs on board
-
-
-#if (PLATFORM_ID==TPP2W) || (PLATFORM_ID==TPP2N) ||(PLATFORM_ID==TPP2WG2)
-#define HAL_SLOT_COUNT			6
-#elif (PLATFORM_ID==TPP3W) || (PLATFORM_ID==TPP3WG2)
-#define HAL_SLOT_COUNT			12
-#elif (PLATFORM_ID==SIMULATOR)
-#define HAL_SLOT_COUNT			12
-#elif (PLATFORM_ID==LTTP3)
-#define HAL_SLOT_COUNT			12
-#else
-#error Sorry, this platform type currently not supported
-#endif
-
-
-/* Number of ioports + space for (possible) extra I2C channels
- */
-#define HAL_IOPORT_COUNT		(HAL_SLOT_COUNT+(HAL_SLOT_COUNT/2))
-
 
 struct channels
 {
@@ -163,22 +152,17 @@ struct channels
 };
 
 
-/*! \brief I/O port descriptor 
- */
+/*! \brief I/O port descriptor */
 struct ioport {
 	iotype type;				//!< Type ID
 	union {
-		ssi_info ssi;			//!< 1-Wire, SPI and I2C info
 		serial_info ser;		//!< RS-485 serial port info
-		pl_io_num gpio;			//!< GPIO line for Dry Contacts
-		pl_io_num pin[4];
 	} d;
 	channels ci;				//!< Info about served channels
 };
 
 
-/*! \brief Hardware TPS slot descriptor 
- */
+/*! \brief Hardware TPS slot descriptor  */
 struct tibbit_slot {
 	tibbit tb;					//!< Tibbit type installed or TB_NONE if slot is free
 	pl_io_num pin[4];			//!< Four GPIO lines facing to CPU
@@ -186,8 +170,7 @@ struct tibbit_slot {
 };
 
 
-/*! \brief HAL error codes
- */
+/*! \brief HAL error codes */
 enum hal_error {
 	NO_ERROR = 0,				//<! No error
 	HAL_SUCCESS = NO_ERROR,		//<! Alias for NO_ERROR
@@ -196,44 +179,20 @@ enum hal_error {
 	HAL_WRONG_SLOT,				//<! Wrong slot number specified
 	HAL_SLOT_OCCUPIED,			//<! Slot already occupied by other tibbit
 	HAL_NO_FREE_RESOURCES,		//<! Resource limit achieved
-/* Add new error codes here */	
 	HAL_LAST_ERROR
 };
 
-
-/* TODO: Need to move these externs to separate header files.
- */
-extern void ssi_setup_channel(ioport *);
 extern void serial_setup(ioport *);
 extern void serial_init();
 extern bool is_serial_port(ioport *);
-extern serial_role serial_get_role(ioport *);
 extern bool serial_set_role(ioport *, serial_role);
 extern bool serial_set_type(ioport *, iotype);
 extern void serial_send(ioport *, string);
 extern void serial_remember_port(ioport *);
-extern ioport *serial_port(unsigned char);
 extern string serial_recv(ioport *, byte);
-extern low_high gp4_state(ioport *, byte);
-extern void gp4_setstate(ioport *, byte, low_high);
-extern void gp4_enable(ioport *, byte, no_yes);
 extern ioport *ioport_alloc(tbslot, iotype, char);
-extern void ioport_free(ioport *);
 extern hal_error tibbit_install(tbslot, tibbit);
-extern void tibbit_remove(tbslot);
-extern unsigned char ioport_flags(ioport *);
-extern int ioport_setopt(ioport *, ioport_option, int);
-extern int ioport_getopt(ioport *, ioport_option);
-extern bool is_tibbit_installed(tibbit);
 extern tibbit_slot *tibbit_get(tibbit, byte);
-extern char tibbit_get_slot(tibbit, byte);
 extern iotype ioport_type(ioport *);
-extern string iotype_string(iotype);
-extern string ioport_typestring(ioport *);
-extern char ioport_spn(ioport *);
-extern bool wifi_card_installed();
-extern bool is_uart_slot(byte);
-extern void ioport_set_channels(ioport *, unsigned char, unsigned char);
-
 
 #endif

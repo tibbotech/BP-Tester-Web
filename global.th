@@ -1,51 +1,17 @@
-#ifndef __GLOBAL_TH_INCLUDED__
-#define __GLOBAL_TH_INCLUDED__
-
-
-
-
-#include "debug.th"
-
+#define MAX_DATA_LEN 4096
+#define MAX_CFG_LEN 8
+#define NULL 0
+#define COUNTOF(x)	(sizeof(x)/sizeof((x)[0]))
 
 typedef unsigned char byte;
 typedef unsigned short word;
 typedef unsigned long dword;
 
-
-#define NULL ((void *)0)
-#define COUNTOF(x)	(sizeof(x)/sizeof((x)[0]))
-
-
-typedef struct _val
-{
-	byte type;
-	union {
-		long l;
-		float f;
-	};
-} value;
-
-
-#define TYPE_LONG		0
-#define TYPE_FLOAT 		1
-
-
-typedef struct _sensor {
-	value prev[2];
-	value res[2];
-} sensor;
-
-
-#endif
-
 extern void lcd_init();
 extern void get_response();
-extern void delay_mls(word ms);
-extern void print_properties();
 extern void set_sensor_id(byte id);
 extern void set_sensor_type(byte stype);
 extern void set_sensor_data(string data);
-extern unsigned long getPPointerValue();
 extern void firmware_upload_in_prog_screen();
 extern void update_firmware_upload_screen(word currentpack, word totalpacks);
 extern void upload_successful_screen();
@@ -53,35 +19,13 @@ extern void xmodem_waiting();
 extern void upload_failed_screen();
 extern void duplicate_id_screen();
 extern string hex_to_dec(string hi,string lo);
-
-#define __GLOBAL_TH_INCLUDED__
-
-
-typedef unsigned char byte;
-typedef unsigned short word;
-typedef unsigned long dword;
-
-
-#define MAX_DATA_LEN 4096
-#define MAX_CFG_LEN 8
-
+extern void delay_ms(unsigned int);
+extern string get_temp_and_hum(string rawdata, unsigned char w);
+extern string get_temp(string rawdata);
+extern string get_light(string rawdata);
 
 typedef struct {
 	word datalen;
 	word data[MAX_DATA_LEN];
 	word config[MAX_CFG_LEN];
 } firmware;
-
-
-#ifndef NULL
-#define NULL 0
-#endif
-
-
-#define COUNTOF(x)	(sizeof(x)/sizeof((x)[0]))
-
-
-#include "debug.th"
-
-
-
