@@ -175,18 +175,14 @@ get_sensor_data(unsigned char w,unsigned char x)
 					lo = res[4];
 					result=hex(hi)+right(hex(lo),2);
 					result=val(result);
-					result=result;
-					
+			
 					break;
 			
 				default:
-					return;
+				return;
 		}
 	}
-	
-	//result=result[4];
 	set_sensor_data(result);
-		
 }
 
 

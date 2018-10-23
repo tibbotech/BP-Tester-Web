@@ -1,12 +1,12 @@
 include "display.tbh"
 
-dim MAX_NUM_OF_SENSORS as byte = 20
-dim MAX_SENSOR_ID_NUM as byte = 20
+dim MAX_NUM_OF_SENSORS as byte = 147
+dim MAX_SENSOR_ID_NUM as byte = 10
 dim MIN_SENSOR_ID_NUM as byte = 1
 
-dim sensor_no(20) as byte
-dim sensor_type(20) as byte
-dim sensor_data(20) as string
+dim sensor_no(147) as byte
+dim sensor_type(147) as byte
+dim sensor_data(147) as string
 
 declare sub set_id()
 dim poll_sensors as boolean=false
@@ -80,6 +80,7 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 			case 1:
 				if ok_to_poll=true then
 					poll_sensors=true
+					current_page=0
 				end if
 			case 2:
 				poll_sensors=false
@@ -167,8 +168,6 @@ sub home_screen()
 	lcd.printaligned("Upload Firmware",177,222,50,50)
 	lcd.print("Set ID",260,227)
 	lcd.forecolor=65535 
-	romfile.open("logosmall.bmp")
-	lcd.bmp(romfile.offset,245,0,0,0,lcd.width,lcd.height)
 	romfile.open("11x19(HP).bin")
 	lcd.setfont(romfile.offset)	
 	lcd.unlock
@@ -350,6 +349,7 @@ sub lcd_poll()
 		end if
 	position=position+1
 	next b
+	lcd.print(str(current_page+1)+"/"+str(total_num_pages),280,12)
 	lcd.unlock
 end sub
 
@@ -388,15 +388,19 @@ end sub
 
 sub on_button_pressed()
 	
-	if current_page<total_num_pages-1 then
-		current_page=current_page+1
-	else
-		current_page=0
-	end if
+	if poll_sensors=true then
 	
-	lcd.forecolor=456
-	lcd.fill(45,180,60,30)
-	lcd.forecolor=65535	
+		if current_page<total_num_pages-1 then
+			current_page=current_page+1
+		else
+			current_page=0
+		end if
+		
+		lcd.forecolor=0
+		lcd.fill(6,80,308,135)
+		lcd.forecolor=65535	
+	
+	end if
 	
 end sub
 

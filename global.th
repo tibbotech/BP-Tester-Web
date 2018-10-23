@@ -40,6 +40,7 @@ typedef struct _sensor {
 
 extern void lcd_init();
 extern void get_response();
+extern void delay_mls(word ms);
 extern void print_properties();
 extern void set_sensor_id(byte id);
 extern void set_sensor_type(byte stype);
