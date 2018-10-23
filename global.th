@@ -52,6 +52,7 @@ extern void upload_successful_screen();
 extern void xmodem_waiting();
 extern void upload_failed_screen();
 extern void duplicate_id_screen();
+extern string hex_to_dec(string hi,string lo);
 
 #define __GLOBAL_TH_INCLUDED__
 

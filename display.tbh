@@ -42,5 +42,7 @@ declare sub led_upload_pattern()
 declare sub led_download_pattern()
 declare sub modbus_request2(ptr as dword,  devaddr as byte,  request as byte,  start as word, count as  word,  regdata as string)
 declare sub upload_failed_screen()
+declare sub clear_line(position as word)
+declare sub clear_screen()
 
 declare function get_id() as byte

@@ -141,10 +141,7 @@ sub home_screen()
 	
 	lcd.lock
 	
-	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
+	clear_screen()
 	romfile.open("11x19(HP).bin")
 	lcd.setfont(romfile.offset)
 	lcd.print("Hexagon Sensor Test",5,12)
@@ -174,17 +171,11 @@ sub home_screen()
 
 end sub
 
-
-
 sub set_id_screen()
 	
 	id=1
 	lcd.lock
-	
-	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
+	clear_screen() 
 	romfile.open("11x19(HP).bin")
 	lcd.setfont(romfile.offset)
 	lcd.print("Set ID",5,12)
@@ -217,7 +208,6 @@ sub set_id_screen()
 	lcd.forecolor=val("&b"+strgen(lcd.greenbits/&hFF,"1")+strgen(lcd.greenbits And &hFF,"0"))
 	lcd.print(str(id),45,180)
 	lcd.forecolor=0
-	
 	lcd.unlock
 
 end sub
@@ -229,9 +219,7 @@ sub change_id()
 	lcd.print("ID: ",15,180)
 	lcd.forecolor=val("&b"+strgen(lcd.greenbits/&hFF,"1")+strgen(lcd.greenbits And &hFF,"0"))
 	lcd.print(str(id),45,180)
-	lcd.forecolor=0
-	
-	
+	lcd.forecolor=0	
 end sub
 
 sub on_sys_timer()
@@ -242,8 +230,6 @@ sub on_sys_timer()
 			timer=0
 		end if
 	end if
-	
-
 end sub
 
 'Prints properties screen and sets LED.
@@ -311,12 +297,9 @@ sub lcd_poll()
 	next b	
 	
 		
-	lcd.lock
-	lcd.forecolor=0
-	lcd.fill(190,90,120,130)
-	lcd.forecolor=65535
+
 	
-	dim position as byte = 0
+	dim position as word = 0
 	for b=start_index to start_index+5
 		
 		if sensor_no(b)<>0 then
@@ -324,6 +307,7 @@ sub lcd_poll()
 			lcd.print(str(sensor_data(b)),190,90+(20*position))
 			select case sensor_type(b)
 			case 1:
+				clear_line(position)
 				lcd.print("Temp/Hum",70,90+(20*position))
 				if sensor_data(b)="" then
 					lcd.print("Offline",190,90+(20*position))
@@ -332,6 +316,7 @@ sub lcd_poll()
 					lcd.print(left(sensor_data(b),c-1)+ "C " + right(sensor_data(b),len(sensor_data(b))-c) + "%",190,90+(20*position))
 				end if				
 			case 2:
+				clear_line(position)
 				lcd.print("Temp",70,90+(20*position))
 				if sensor_data(b)="" then
 					lcd.print("Offline",190,90+(20*position))
@@ -339,6 +324,7 @@ sub lcd_poll()
 					lcd.print(sensor_data(b)+ "C",190,90+(20*position))
 				end if
 			case 3:
+				clear_line(position)
 				lcd.print("Light",70,90+(20*position))
 				if sensor_data(b)="" then
 					lcd.print("Offline",190,90+(20*position))
@@ -351,6 +337,14 @@ sub lcd_poll()
 	next b
 	lcd.print(str(current_page+1)+"/"+str(total_num_pages),280,12)
 	lcd.unlock
+end sub
+
+sub clear_line(position as word)
+	
+	lcd.forecolor=0
+	lcd.fill(190,90+(20*position),124,17)
+	lcd.forecolor=65535
+		
 end sub
 
 'dim pval as dword
@@ -395,11 +389,11 @@ sub on_button_pressed()
 		else
 			current_page=0
 		end if
-		
+		lcd.lock
 		lcd.forecolor=0
 		lcd.fill(6,80,308,135)
 		lcd.forecolor=65535	
-	
+		lcd.unlock
 	end if
 	
 end sub
@@ -428,15 +422,11 @@ end sub
 
 sub scanning_sensors_screen()
 	
-	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
+	clear_screen()
 	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
 	lcd.print("Scanning for sensors",60,100)
 	
 end sub
-
 
 sub update_scanning_sensors_screen(percent as word)
 	if percent<10 then
@@ -451,16 +441,14 @@ end sub
 
 sub firmware_upload_in_prog_screen()
 
-	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
+	clear_screen()
 	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
 	lcd.print("Uploading Firmware",70,100)
 
 end sub
 
 sub update_firmware_upload_screen(currentpack as word, totalpacks as word)
+
 	dim percent as word
 	percent = (currentpack*100)/totalpacks
 	if percent<10 then
@@ -471,14 +459,13 @@ sub update_firmware_upload_screen(currentpack as word, totalpacks as word)
 	lcd.rectangle(60,170,260,190)
 	lcd.fill(60,170,percent*2,20)
 	led_download_pattern()
+	
 end sub
 
 sub upload_successful_screen()
+
 	set_LED(&b11111)
-	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
+	clear_screen() 
 	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
 	lcd.print("Upload Successful!",80,120)
 	sys.timercountms=0
@@ -489,13 +476,10 @@ sub upload_successful_screen()
 	
 end sub
 
-
 sub scan_successful_screen()
+
 	set_LED(&b11111)
-	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
+	clear_screen()
 	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
 	lcd.print("Scan Successful!",80,100)
 	lcd.print(str(x) +" Sensors Detected!",65,140)
@@ -508,11 +492,10 @@ sub scan_successful_screen()
 end sub
 
 sub max_sensors_screen()
+
 	set_LED(&b11111)
-	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
+	
+	clear_screen() 
 	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
 	lcd.print("Maximum number of sensors",30,85)
 	lcd.print("detected!",115,110)
@@ -525,10 +508,7 @@ end sub
 
 sub duplicate_id_screen()
 	set_LED(&b11111)
-	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
+	clear_screen()
 	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
 	lcd.print("Duplicate slave IDs detected!",30,85)
 	lcd.print("Please ensure all slaves have",115,125)
@@ -542,11 +522,7 @@ end sub
 sub upload_firmware_screen()
 	
 	lcd.lock
-	
-	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
+	clear_screen()
 	romfile.open("11x19(HP).bin")
 	lcd.setfont(romfile.offset)
 	lcd.print("Upload Firmware",5,12)
@@ -662,10 +638,7 @@ end sub
 sub upload_failed_screen()
 		
 	set_LED(&b11111)
-	lcd.forecolor=0
-	lcd.fill(0,0,lcd.width,lcd.height)
-	lcd.backcolor=0
-	lcd.forecolor=65535 
+	clear_screen()
 	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
 	lcd.print("Upload Failed!",90,100)
 	lcd.print("Please Try Again!",75,140)
@@ -674,7 +647,6 @@ sub upload_failed_screen()
 	wend
 	set_LED(&b00000)
 	home_screen()
-		
 		
 end sub
 
@@ -690,5 +662,14 @@ sub reset_sensors()
 		sensor_type(counter)=0
 		sensor_data(counter)=0
 	next counter
+	
+end sub
+
+sub clear_screen()
+
+	lcd.forecolor=0
+	lcd.fill(0,0,lcd.width,lcd.height)
+	lcd.backcolor=0
+	lcd.forecolor=65535 
 	
 end sub
