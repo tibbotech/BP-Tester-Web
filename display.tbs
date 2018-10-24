@@ -1,7 +1,7 @@
 include "display.tbh"
 
 dim MAX_NUM_OF_SENSORS as byte = 147
-dim MAX_SENSOR_ID_NUM as byte = 10
+dim MAX_SENSOR_ID_NUM as byte = 40
 dim MIN_SENSOR_ID_NUM as byte = 1
 
 dim sensor_no(147) as byte
@@ -62,13 +62,10 @@ sub lcd_init()
 
 end sub
 
-
 sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
-
 	if key_event=PL_KP_EVENT_PRESSED then
 		beep.play("B*",PL_BEEP_CANINT)
 		pat.play("G~",PL_PAT_CANINT)
-		
 		if screen=0 then
 			select case key_code
 			case 0:
@@ -91,19 +88,17 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 				ok_to_poll=false
 				set_id_screen()		
 				screen=2
-				
 			end select
-		
-		
 		else if screen=1 then
 			select case key_code
 			case 0:
 				home_screen()
 				screen=0
-			case 3:
+			case 2:
 				do_xmodem_upload("HexagonFirmware.bin")
+			case 3:
+				do_xmodem_upload("MonitorUpdater.bin")
 			end select
-	
 		else if screen=2 then
 			select case key_code
 			case 0:
@@ -127,16 +122,10 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 				reprogram_address(0,id)
 			end select		
 		end if
-		
-	end if
-	
-	
+	end if	
 end sub
 
-'Prints properties screen and sets LED.
-
 sub home_screen()
-	
 	lcd.lock
 	clear_screen()
 	romfile.open("11x19(HP).bin")
@@ -159,17 +148,15 @@ sub home_screen()
 	lcd.forecolor=25544
 	lcd.print("Scan",30,227)
 	lcd.print("Poll",107,227)
-	lcd.printaligned("Upload Firmware",177,222,50,50)
+	lcd.print("Upload",181,227)
 	lcd.print("Set ID",260,227)
 	lcd.forecolor=65535 
 	romfile.open("11x19(HP).bin")
 	lcd.setfont(romfile.offset)	
 	lcd.unlock
-
 end sub
 
 sub set_id_screen()
-	
 	id=1
 	lcd.lock
 	clear_screen() 
@@ -206,11 +193,9 @@ sub set_id_screen()
 	lcd.print(str(id),45,180)
 	lcd.forecolor=0
 	lcd.unlock
-
 end sub
 
 sub change_id()
-
 	lcd.forecolor=0
 	lcd.fill(45,180,60,30)
 	lcd.forecolor=65535
@@ -218,7 +203,6 @@ sub change_id()
 	lcd.forecolor=val("&b"+strgen(lcd.greenbits/&hFF,"1")+strgen(lcd.greenbits And &hFF,"0"))
 	lcd.print(str(id),45,180)
 	lcd.forecolor=0	
-	
 end sub
 
 sub on_sys_timer()
@@ -230,8 +214,6 @@ sub on_sys_timer()
 		end if
 	end if
 end sub
-
-'Prints properties screen and sets LED.
 
 sub lcd_scan()
 	kp.enabled=NO
@@ -469,26 +451,13 @@ sub max_sensors_screen()
 		
 end sub
 
-'sub duplicate_id_screen()
-'	set_LED(&b11111)
-'	clear_screen()
-'	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
-'	lcd.print("Duplicate slave IDs detected!",30,85)
-'	lcd.print("Please ensure all slaves have",115,125)
-'	lcd.print("Unique IDs!",95,150)
-'	sys.timercountms=0
-'	while sys.timercountms<1000
-'	wend
-		
-'end sub
-
 sub upload_firmware_screen()
 	
 	lcd.lock
 	clear_screen()
 	romfile.open("11x19(HP).bin")
 	lcd.setfont(romfile.offset)
-	lcd.print("Upload Firmware",5,12)
+	lcd.print("Upload",5,12)
 	lcd.horline(5,315,40)
 	lcd.verline(5,40,240)
 	lcd.verline(80,220,240)
@@ -501,7 +470,11 @@ sub upload_firmware_screen()
 	lcd.setfont(romfile.offset)	
 	lcd.forecolor=25544
 	lcd.print("Exit",30,227)
-	lcd.print("Upload",260,227)
+	lcd.print("Upload",183,222)
+	lcd.print("Firmware",177,230)
+	lcd.print("Upload",260,222)
+	lcd.print("Monitor",258,230)
+	lcd.printaligned("Upload Monitor",260,222,50,50)
 	lcd.forecolor=65535 
 	romfile.open("logosmall.bmp")
 	lcd.bmp(romfile.offset,245,0,0,0,lcd.width,lcd.height)
@@ -516,9 +489,6 @@ sub upload_firmware_screen()
 	lcd.unlock
 
 end sub
-
-
-'Sets LED pattern. Different pattern used for each different screen.
 
 sub set_LED(pattern as byte)
 
@@ -589,7 +559,6 @@ sub led_download_pattern()
 	case 0:
 		set_LED(&b10000)
 	end select	
-	
 	
 end sub
 

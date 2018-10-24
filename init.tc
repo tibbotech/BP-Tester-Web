@@ -3,54 +3,6 @@
 
 
 
-string
-serial_recv(byte maxlen)
-{
-	ser.num = 0;
-	return ser.getdata(maxlen);
-}
 
 
-void
-serial_setup()
-{	
-
-	io.num = 0;
-	io.enabled = YES;
-	io.state = HIGH;
-	ser.num = 0;
-	ser.rxbuffrq(2);
-	ser.txbuffrq(2);
-	sys.buffalloc();
-	ser.rxclear();
-	ser.txclear();
-	ser.notifysent(1);
-	ser.mode = PL_SER_MODE_UART;
-	ser.bits = PL_SER_BB_8;
-	ser.parity =  PL_SER_PR_NONE;
-	ser.flowcontrol = PL_SER_FC_DISABLED;
-	ser.interface = PL_SER_SI_HALFDUPLEX;
-	ser.enabled = NO;
-	ser.baudrate = ser.div9600/4;
-	ser.enabled = YES;	
-}
-
-
-void on_ser_data_arrival(){
-	
-	string s;
-	s=ser.getdata(128);
-
-}
-
-void
-serial_send(string data)
-{
-
-		
-	ser.num = 0;
-	ser.notifysent(1);
-	ser.setdata(data);
-	ser.send();
-}
 

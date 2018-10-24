@@ -4,7 +4,7 @@ platform=TPP2W(G2)
 src_lib_ver=2_01_00
 name=Hexagon-Sensor-Test
 output=Hexagon-Sensor-Test.tpc
-debug=on
+debug=off
 defines= 
 transport=udp_broadcast
 [address1]
@@ -86,11 +86,5 @@ path=HexagonFirmware.bin
 type=binary
 format=
 condition=
-locked=no
-location=project
-[file12]
-path=init.tc
-type=c
-format=65001
 locked=no
 location=project

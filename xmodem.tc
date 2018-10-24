@@ -22,30 +22,32 @@ bool upload_succesful=true;
 
 
 bool
-do_xmodem_upload(string fwfile)
+do_xmodem_upload(string filename)
 {
 	kp.enabled=NO;
-	word blk, blockcnt;
-	dword bc;
-	string data;
-	string pkt;
-	word *temp;
+	string data, pkt;
 	word job_size, block_num;
-	
-// 0x0800 - 0x1FFF - Main Firmware
-// 0x0000 - 0x07FF - Monitor
- 
-#define FW_OFFSET (0x0800*sizeof(word))
 
 	for(;;) {
+		doevents;
 		pkt = ser.getdata(255);
-		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C')
+		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C'){
 			break;
-		else
+			}
+		else{
+			delay_ms(1000);
+			pkt = ser.getdata(255);
+			}
+		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C'){
+			break;
+			}
+		else{			
 			kp.enabled=YES;
 			return false;
+			}
+			
 	}
-	romfile.open(fwfile);
+	romfile.open(filename);
 	job_size=romfile.size/128;
 	firmware_upload_in_prog_screen();
 	for(block_num=1; block_num<=job_size; ++block_num) {
@@ -54,14 +56,9 @@ do_xmodem_upload(string fwfile)
 			break;
 	}
 	
-	sys.debugprint("EOT\r\n");
 	serial_send(chr(XMODEM_EOT));
-	
-	sys.debugprint("ETB\r\n");
 	serial_send(chr(XMODEM_ETB));
-
-	sys.debugprint("Success\r\n");
-		if (upload_succesful)  
+	if (upload_succesful)  
 		upload_successful_screen();
 		kp.enabled=YES;
 	return OK;

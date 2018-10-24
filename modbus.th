@@ -1,5 +1,5 @@
 #include "global.th"
-#define MODBUS_TIMEOUT			5000
+#define MODBUS_TIMEOUT 5000
 
 static byte _crc_table_hi[] = 
 {
@@ -42,11 +42,6 @@ static byte _crc_table_lo[] =
 	0x44,0x84,0x85,0x45,0x87,0x47,0x46,0x86,0x82,0x42,0x43,0x83,0x41,0x81,0x80,0x40,
 };
 
-
-enum modbus_source {
-	MODBUS_SERIAL
-};
-
 enum modbus_state {
 	MODBUS_IDLE,
 	MODBUS_RECEIVING,
@@ -54,7 +49,6 @@ enum modbus_state {
 };
 
 enum modbus_func_code {
-
 	READ_HOLDING_REGISTERS 		= 3,
 	READ_INPUT_REGISTERS 		= 4,
 	PRESET_SINGLE_REGISTER		= 6,
@@ -78,9 +72,3 @@ struct modbus_req {
 	modbus_reqhdr hdr;
 	word crc;
 };
-
-extern void on_modbus_data_arrival(modbus_source);
-extern void modbus_init();
-extern bool modbus_finished();
-extern string modbus_result();
-extern bool transmit_block(byte *data, word blk, word blockcnt);

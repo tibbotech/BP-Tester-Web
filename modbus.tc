@@ -1,6 +1,6 @@
 #include "global.th"
 #include "modbus.th"
-
+#define MODBUS_TIMEOUT 5000
 #define MB_RQ_SIZE sizeof(modbus_req)
 static modbus_state _state;
 static dword _timeout;
@@ -59,7 +59,7 @@ modbus_request(byte devaddr, byte request, word start, word count, string regdat
  * Routine receives and parses ModBus PDU
  */
 void
-on_modbus_data_arrival(modbus_source src)
+on_modbus_data_arrival()
 {
 	string tmp = "";
 	tmp = ser.getdata(255);
@@ -87,6 +87,134 @@ on_modbus_data_arrival(modbus_source src)
 			else{
 				unknown_sensor_screen();
 			}
+		}
+	}
+}
+void
+reprogram_address(byte oldaddr, byte newaddr)
+{
+	string args;
+	args = chr(0) +  chr(newaddr);
+	modbus_request(oldaddr, PRESET_SINGLE_REGISTER, SCAN_SENSORS, 1, args);
+}
+
+void
+scan_sensors(unsigned char w)
+{
+	modbus_request(w, READ_HOLDING_REGISTERS, SCAN_SENSORS, 4, "");
+	get_response();
+	if (modbus_finished()){
+		set_sensor_id(w);
+	}
+}
+
+void
+get_sensor_type(unsigned char w)
+{
+	string result;
+	modbus_request(w, READ_INPUT_REGISTERS, GET_SENSOR_TYPE, 1, "");
+	get_response();
+	result = modbus_result();
+	result=result[4];
+	set_sensor_type(result);
+}
+
+void
+get_sensor_data(unsigned char w,unsigned char x)
+{
+	string result, rawdata;
+	
+	switch(x){
+	case 1:	//temp&hum
+		modbus_request(w, READ_INPUT_REGISTERS, READ_TEMP_H_VALUE, 1, "");
+		break;
+	case 2:	//temp
+		modbus_request(w, READ_INPUT_REGISTERS, READ_TEMP_VALUE, 1, "");
+		break;
+	case 3:	//light
+		modbus_request(w, READ_INPUT_REGISTERS, READ_LIGHT_VALUE, 1, "");
+		break;
+	default:
+	}
+	get_response();
+	rawdata = modbus_result();
+	if(rawdata != "") {
+			switch(x) {
+				case 1:
+					result=get_temp_and_hum(rawdata, w);
+					break;
+				case 2:
+					result=get_temp(rawdata);
+					break;
+				case 3:
+					result=get_light(rawdata);
+					break;
+				default:
+				return;
+		}
+	}
+	set_sensor_data(result);
+}
+
+string 
+get_temp_and_hum(string rawdata, unsigned char w){
+	string temp, hum, result;
+	temp=hex_to_dec(hex(rawdata[3]),hex(rawdata[4]));
+	temp=left(temp,len(temp)-1)+"."+right(temp,1);
+	if (len(temp)<=2){
+	temp="0"+temp;
+	}
+	modbus_request(w, READ_INPUT_REGISTERS, READ_HUM_VALUE, 1, "");
+	get_response();
+	rawdata = modbus_result();
+	hum=hex_to_dec(hex(rawdata[3]),hex(rawdata[4]));
+	hum=left(hum,len(hum)-1)+"."+right(hum,1);
+	if (len(hum)<=2){
+	hum="0"+hum;
+	};
+	result=temp+"x"+hum;
+	return result;
+} 
+
+string 
+get_temp(string rawdata){
+	string temp;
+	temp=hex_to_dec(hex(rawdata[3]),hex(rawdata[4]));
+	temp=left(temp,len(temp)-2)+"."+right(temp,2);
+	if (len(temp)<=3){
+	temp="0"+temp;
+	}
+	return temp;
+}
+
+string 
+get_light(string rawdata){
+	string light;
+	light=hex_to_dec(hex(rawdata[3]),hex(rawdata[4]));
+	light=val(light);
+	return light;
+}
+
+string
+hex_to_dec(string hi,string lo)
+{
+	string dec_val;
+	if (len(lo)==3){
+		lo="0"+right(lo,1);
+	}else{
+		lo=right(lo,2);
+	}
+	dec_val=hi+lo;
+	dec_val=val(dec_val);
+	return dec_val;	
+}
+
+void get_response(){
+	sys.timercountms=0;
+	while(!modbus_finished()){
+		on_modbus_data_arrival();
+		if (sys.timercountms>100){
+		break;
 		}
 	}
 }
