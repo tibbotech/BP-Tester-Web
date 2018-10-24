@@ -1,193 +1,24 @@
 #include "global.th"
-#include "init.th"
 #include "modbus.th"
 
-static tibbit_slot _slots[] = { // This array describes all available GPIO lines
-
-	{ TB_NONE, { PL_IO_NUM_9_TX0, 	PL_IO_NUM_8_RX0, 	PL_IO_NUM_0, 	PL_IO_NUM_16_INT0 }, 0 }, // slot 0 -> S1 
-	{ TB_NONE, { PL_IO_NUM_32, 		PL_IO_NUM_33, 		PL_IO_NUM_4, 	PL_IO_NUM_20_INT4 }, 0 }, // slot 1 -> S3
-	{ TB_NONE, { PL_IO_NUM_11_TX1, 	PL_IO_NUM_10_RX1, 	PL_IO_NUM_1, 	PL_IO_NUM_17_INT1 }, 0 }, // slot 2 -> S5
-	{ TB_NONE, { PL_IO_NUM_34, 		PL_IO_NUM_35, 		PL_IO_NUM_5, 	PL_IO_NUM_21_INT5 }, 0 }, // slot 3 -> S7
-	{ TB_NONE, { PL_IO_NUM_13_TX2, 	PL_IO_NUM_12_RX2, 	PL_IO_NUM_2, 	PL_IO_NUM_18_INT2 }, 0 }, // slot 4 -> S9
-	{ TB_NONE, { PL_IO_NUM_36, 		PL_IO_NUM_37, 		PL_IO_NUM_6, 	PL_IO_NUM_22_INT6 }, 0 }, // slot 5 -> S11
-	{ TB_NONE, { PL_IO_NUM_15_TX3, 	PL_IO_NUM_14_RX3, 	PL_IO_NUM_3, 	PL_IO_NUM_19_INT3 }, 0 }, // slot 6 -> S13
-};
-
-
-// FIXME: JIRA bug TIDE-327. 
-//static ioport _ports[COUNTOF(_slots)*4]; // 4 is number of GPIO pins per tibbit slot
-static ioport _ports[13*4]; // 4 is number of GPIO pins per tibbit slot
-
-
-/*! \brief Install tibbit in selected slot
- * \returns Error code or HAL_SUCCESS
- */
-hal_error 
-tibbit_install(tbslot slot, tibbit tb)
-{
-	tibbit_info *ti;
-	
-	if(slot >= COUNTOF(_slots))
-		return HAL_WRONG_SLOT; // Prevent buffer overruns
-
-	if(TB_NONE == tb)
-		return HAL_SUCCESS;
-
-	if(_slots[slot].tb != TB_NONE)
-		return HAL_SLOT_OCCUPIED;
-
-	ti = tibbit_getinfo(tb);
-	if(NULL == ti) 
-		return HAL_NULL_POINTER;
-
-	/* Skip connector tibbits, pushbuttons and LEDs because they
-	 * must be installed in even-numbered slots
-	 */
-	if(0 != (ti->pins & TBSLOT_C1_OR_C2))
-		return HAL_WRONG_TIBBIT_TYPE; 
-
-	/* Skip reserved/missing tibbits
-	 */
-	if(0 == ti->slots)
-		return HAL_WRONG_TIBBIT_TYPE; 
-		
-	/* Wide tibbits requires special care: they can be placed
-	 * only in even-numbered slots
-	 */
-	if(ti->slots == 2 && (0 != (slot % 2)))
-		return HAL_WRONG_SLOT;
-	
-	_slots[slot].tb = tb;
-	_slots[slot].flags = ti->pins & TBSLOT_PIN_USAGE_MASK;
-	
-	return HAL_SUCCESS;
-}
-
-static ioport *
-_ioport_get()
-{
-	byte i;
-	
-	for(i=0; i<COUNTOF(_ports); ++i)
-		if(_ports[i].type == IO_NONE)
-			return &_ports[i];
-			
-	return NULL;
-}
-
-
-static ioport *
-_ioport_alloc_rs485(tbslot slot)
-{
-	ioport *res;
-	byte i;
-	
-	if((_slots[slot].tb != TB_02) && (_slots[slot].tb != TB_05))
-		return NULL;
-	
-	if(slot != 0 && slot != 1 && slot != 2 && slot != 3)
-		return NULL; 
-	i = slot;
-
-
-	/* Slot must have pins 0,1,2 to be free
-	 */
-	if(0 != (_slots[slot].flags & (TBSLOT_PIN_A_ALLOC|TBSLOT_PIN_B_ALLOC|TBSLOT_PIN_C_ALLOC)))
-		return NULL; // Slot is somehow occupied
-
-	res = _ioport_get();
-	if(NULL == res)
-		return NULL;
-		
-	_slots[slot].flags |= TBSLOT_PIN_A_ALLOC | TBSLOT_PIN_B_ALLOC | TBSLOT_PIN_C_ALLOC;
-	
-	res->type = IO_RS485;
-	res->d.ser.role = SR_UART;
-	res->d.ser.spn = i;
-	res->d.ser.tx = _slots[slot].pin[0];
-	res->d.ser.rx = _slots[slot].pin[1];
-	res->d.ser.dir = 0;
-	res->ci.start = 0;
-	res->ci.count = 1;
-
-	if(_slots[slot].tb == TB_05) {
-		res->d.ser.dir = _slots[slot].pin[2];
-		io.num = res->d.ser.dir;
-		io.enabled = YES;
-		io.state = HIGH;
-	}
-	
-	serial_setup(res);
-	return res;
-}
-
-
-
-/*! \brief Allocate I/O port
- * \returns I/O port descriptor (pointer) or NULL if error occurs
- * \param slot Number of slot when tibbit must be installed
- * \param type I/O port type
- * \n Number of slot pin (0...3), or -1 to auto-allocate first free pin
- * \note Different I/O port types require different number of pins. For example
- * SSI/I2C/1W ports requires 2 adjacent pins; moreover, first pin must be 0 or 2 (if
- * explicitly requested) or port allocation will fail.
- */
-ioport *
-ioport_alloc(tbslot slot, iotype type, char n)
-{
-	ioport *res;
-	byte i, f;
-	
-	if(n < -1 || n > 3)
-		return NULL;
-		
-	switch(type) {
-
-		case IO_RS485:
-			return _ioport_alloc_rs485(slot);
-		
-		default:
-			break;
-	}
-	return NULL;
-}
-
-iotype 
-ioport_type(ioport *port)
-{
-	return (NULL == port)? IO_NONE: port->type;
-}
-
-
-static bool
-_is_serial_type(iotype t)
-{
-	return (IO_RS485 == t);
-}
-
-
-bool
-is_serial_port(ioport *p)
-{
-	return _is_serial_type(ioport_type(p));
-}
 
 
 string
-serial_recv(ioport *p, byte maxlen)
+serial_recv(byte maxlen)
 {
-	ser.num = p->d.ser.spn;
+	ser.num = 0;
 	return ser.getdata(maxlen);
 }
 
 
 void
-serial_setup(ioport *p)
+serial_setup()
 {	
-	if(!is_serial_port(p))
-		return;
-		
-	ser.num = p->d.ser.spn;
+
+	io.num = 0;
+	io.enabled = YES;
+	io.state = HIGH;
+	ser.num = 0;
 	ser.rxbuffrq(2);
 	ser.txbuffrq(2);
 	sys.buffalloc();
@@ -205,105 +36,21 @@ serial_setup(ioport *p)
 }
 
 
+void on_ser_data_arrival(){
+	
+	string s;
+	s=ser.getdata(128);
+
+}
+
 void
-serial_send(ioport *p, string data)
+serial_send(string data)
 {
-	if(!is_serial_port(p) || 0 == len(data))
-		return;
+
 		
-	ser.num = p->d.ser.spn;
+	ser.num = 0;
 	ser.notifysent(1);
 	ser.setdata(data);
 	ser.send();
 }
 
-/* Please keep this table in sync with enum!
- * First member (tibbit type id) designated for error checking
- */
-static tibbit_info _ti_info[] = 
-{
-	{ TB_NONE, 	0, 0 },
-	{ TB_00_1, 	1, 0 },
-	{ TB_00_2, 	1, TBSLOT_PIN_D_UNUSED },
-	{ TB_00_3, 	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_01, 	1, 0 },
-	{ TB_02, 	2, 0 },
-	{ TB_03_1, 	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_03_2, 	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_04_1, 	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_04_2, 	1, TBSLOT_PIN_D_UNUSED },
-	{ TB_04_3,	1, TBSLOT_PIN_D_UNUSED },
-	{ TB_04_4, 	1, 0 },
-	{ TB_04_5, 	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_04_6, 	1, TBSLOT_PIN_D_UNUSED },
-	{ TB_04_7,	1, TBSLOT_PIN_D_UNUSED },
-	{ TB_04_8, 	1, 0 },
-	{ TB_05,	1, TBSLOT_PIN_D_UNUSED },
-	{ TB_06,	2, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_07,	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_08,	1, 0 },
-	{ TB_09,	1, TBSLOT_PIN_B_UNUSED | TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_10,	1, TBSLOT_PIN_B_UNUSED | TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_11,	1, 0 },
-	{ TB_12,	1, TBSLOT_PIN_B_UNUSED | TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_13,	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_14,	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_15,	1, TBSLOT_PIN_B_UNUSED | TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_16, 	1, 0 },
-	{ TB_17,	1, 0 },
-/* Tibbits below is just connectors */
-	{ TB_18,	1, TBSLOT_C1_OR_C2 },
-	{ TB_19,	2, TBSLOT_C1_OR_C2 },
-	{ TB_20,	2, TBSLOT_C1_OR_C2 },
-	{ TB_21,	1, TBSLOT_C1_OR_C2 },
-/* Normal tibbits again */	
-	{ TB_22,	2, TBSLOT_PIN_B_UNUSED | TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_23,	2, TBSLOT_PIN_B_UNUSED | TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_24,	1, TBSLOT_PIN_D_UNUSED },
-	{ TB_25,	2, TBSLOT_PIN_B_UNUSED | TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_26,	1, TBSLOT_PIN_D_UNUSED },
-/* Sensors */	
-	{ TB_27,	1, TBSLOT_C1_OR_C2 },
-	{ TB_28,	1, TBSLOT_C1_OR_C2 },
-	{ TB_29,	1, TBSLOT_C1_OR_C2 },
-	{ TB_30,	1, TBSLOT_C1_OR_C2 },
-/* PIC coprocessor */	
-	{ TB_31,	1, 0 },
-/* Reserved/Not exists */	
-	{ TB_32,	0, 0 },
-	{ TB_33,	0, 0 },
-	{ TB_34,	0, 0 },
-/* Sensors again */	
-	{ TB_35,	1, TBSLOT_C1_OR_C2 },
-	{ TB_36,	1, TBSLOT_C1_OR_C2 },
-	{ TB_37,	1, TBSLOT_C1_OR_C2 },
-/* Tibbits below is buttons and LEDs */
-	{ TB_38,	1, TBSLOT_C1_OR_C2 },
-	{ TB_39_1,	1, TBSLOT_C1_OR_C2 },
-	{ TB_39_2,	1, TBSLOT_C1_OR_C2 },
-	{ TB_39_3, 	1, TBSLOT_C1_OR_C2 },
-	{ TB_39_4,	1, TBSLOT_C1_OR_C2 },
-/* Normal tibbits again */	
-	{ TB_40_1,	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_40_2,	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_40_3,	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_40_4,	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-/* Tibbit #41 is an exception - it must be paired with #00-3 to work! */
-	{ TB_41,	1, TBSLOT_PIN_C_UNUSED | TBSLOT_PIN_D_UNUSED },
-	{ TB_42,	1, 0 },
-/* Reserved/Not exists */	
-	{ TB_43,	0, 0 },
-	{ TB_44,	0, 0 },
-	{ TB_45,	0, 0 },
-	{ TB_46,	0, 0 },
-/* GPRS/GSM modem */	
-	{ TB_47, 2, 0 }						//!< GPRS modem
-};
-
-/*! \brief Retrieve information about specified Tibbit type
- */
-tibbit_info *tibbit_getinfo(tibbit tb)
-{
-	tibbit_info *t = &_ti_info[tb];
-	return t->type == tb? t: 0;
-}

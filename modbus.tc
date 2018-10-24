@@ -32,7 +32,7 @@ crc16(byte *data, byte byte_cnt)
 
 /*! \brief Issue ModBus request */
 void
-modbus_request(ioport *port, byte devaddr, byte request, word start, word count, string regdata)
+modbus_request(byte devaddr, byte request, word start, word count, string regdata)
 {
 	string<MB_RQ_SIZE+4> data;
 	data = chr(devaddr);
@@ -51,7 +51,7 @@ modbus_request(ioport *port, byte devaddr, byte request, word start, word count,
 	_packet = "";
 	_state = MODBUS_IDLE;
 	_timeout = sys.timercountms + MODBUS_TIMEOUT;
-	serial_send(port, data);
+	serial_send(data);
 }
 
 /* This routine should be called either from on_sock_data_arrival() or 

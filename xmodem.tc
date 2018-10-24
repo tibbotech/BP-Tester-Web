@@ -1,10 +1,8 @@
 #include "global.th"
-#include "init.th"
 #include "modbus.th"
 
 bool upload_succesful=true;
 
-ioport *sp;
 /* \file xmodem.tc
  * This file contains the X-Modem protocol realisation to upload firmware
  * into the hexagon sensors
@@ -27,39 +25,18 @@ bool
 do_xmodem_upload(string fwfile)
 {
 	kp.enabled=NO;
-	sp=get_pointer();
 	word blk, blockcnt;
 	dword bc;
-	byte *data;
+	string data;
 	string pkt;
 	word *temp;
+	word job_size, block_num;
 	
 // 0x0800 - 0x1FFF - Main Firmware
 // 0x0000 - 0x07FF - Monitor
  
 #define FW_OFFSET (0x0800*sizeof(word))
 
-	romfile.open(fwfile);
-    unsigned long ptr = romfile.pointer32;
-	unsigned long fwsize = romfile.size;
-
-	data = (byte *)ptr;
-	bc =   fwsize;
-	temp = (word *)data + FW_OFFSET;
-	
-	blockcnt = bc / XMODEM_PACKET_SIZE;
-	if(bc % XMODEM_PACKET_SIZE != 0)
-		++blockcnt;
-		
- 	/*
-	 * The receiving side is sending NACK or 'C' to indicate that it ready to 
-	 * begin data exchange. NACK means that receiver will use 1-byte CRC and
-	 * 'C' indicates that CRC expected to be 16-bits.
-	 * After that, we begin to send 132 or 133-byte packets, 
-	 * which consists of SOH marker, packet number (and 0xFF-complement byte), 
-	 * 128 bytes of data and 1 or 2 bytes of CRC	
-	 */
-	 
 	for(;;) {
 		pkt = ser.getdata(255);
 		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C')
@@ -68,22 +45,20 @@ do_xmodem_upload(string fwfile)
 			kp.enabled=YES;
 			return false;
 	}
-
-	sys.debugprint("Got NACK from target\r\n");
-	sys.debugprint("Transferring "+str(blockcnt)+" blocks\r\n");
+	romfile.open(fwfile);
+	job_size=romfile.size/128;
 	firmware_upload_in_prog_screen();
-	for(blk=1; blk<=blockcnt; ++blk) {
-		//doevents;
-		if(!transmit_block(data, blk, blockcnt))
+	for(block_num=1; block_num<=job_size; ++block_num) {
+		data=romfile.getdata(128);
+		if(!transmit_block(data, block_num, job_size))
 			break;
-		data += XMODEM_PACKET_SIZE;
 	}
 	
 	sys.debugprint("EOT\r\n");
-	serial_send(sp, chr(XMODEM_EOT));
+	serial_send(chr(XMODEM_EOT));
 	
 	sys.debugprint("ETB\r\n");
-	serial_send(sp, chr(XMODEM_ETB));
+	serial_send(chr(XMODEM_ETB));
 
 	sys.debugprint("Success\r\n");
 		if (upload_succesful)  
@@ -126,11 +101,11 @@ transmit_block(byte *data, word blk, word blockcnt)
 #endif
 
 retransmit:	
-		serial_send(sp, pkt);
+		serial_send(pkt);
 		sys.timercountms=0;
 		/* Check timeout */
 		do {
-			rpl = serial_recv(sp, 1);
+			rpl = ser.getdata(128);
 			if(sys.timercountms>3000)
 			{
 				upload_failed_screen();
@@ -163,5 +138,3 @@ retransmit:
 	} 
 	return false;
 }
-
-
