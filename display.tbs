@@ -101,9 +101,7 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 				home_screen()
 				screen=0
 			case 3:
-					kp.enabled=NO
-					do_xmodem_upload("MonitorUpdater.bin")
-					kp.enabled=YES
+				do_xmodem_upload("MonitorUpdater.bin")
 			end select
 	
 		else if screen=2 then
@@ -602,6 +600,20 @@ sub upload_failed_screen()
 	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
 	lcd.print("Upload Failed!",90,100)
 	lcd.print("Please Try Again!",75,140)
+	sys.timercountms=0
+	while sys.timercountms<3000
+	wend
+	set_LED(&b00000)
+	home_screen()
+		
+end sub
+
+sub unknown_sensor_screen()
+		
+	set_LED(&b11111)
+	clear_screen()
+	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
+	lcd.print("Unknown Sensor Detected!",40,120)
 	sys.timercountms=0
 	while sys.timercountms<3000
 	wend

@@ -1,5 +1,5 @@
 #include "global.th"
-#include "hal.th"
+#include "init.th";
 #define MODBUS_TIMEOUT			5000
 
 static byte _crc_table_hi[] = 
@@ -55,22 +55,10 @@ enum modbus_state {
 };
 
 enum modbus_func_code {
-	READ_COILS 					= 1,
-	READ_DISCRETE_INPUTS 		= 2,
+
 	READ_HOLDING_REGISTERS 		= 3,
 	READ_INPUT_REGISTERS 		= 4,
-	FORCE_SINGLE_COIL			= 5,
 	PRESET_SINGLE_REGISTER		= 6,
-	READ_EXCEPTION_STATUS		= 7,
-	DIAGNOSTIC					= 8,
-// 9 reserved
-// 10 reserved
-	GET_COM_EVENT_COUNTER		= 11,
-	GET_COM_EVENT_LOG			= 12,
-// 13 reserved
-// 14 reserved
-	FORCE_MULTIPLE_COILS		= 15,
-	PRESET_MULTIPLE_REGISTERS 	= 16,
 	SCAN_SENSORS			 	= 200,
 	GET_SENSOR_TYPE			 	= 201,
 	READ_TEMP_H_VALUE			= 400,
@@ -92,9 +80,10 @@ struct modbus_req {
 	word crc;
 };
 
-extern string<2> tohex(unsigned char);
 extern void modbus_request(ioport *, byte, byte, word, word, string);
 extern void on_modbus_data_arrival(modbus_source);
 extern void modbus_init();
 extern bool modbus_finished();
 extern string modbus_result();
+extern ioport* get_pointer();
+extern bool transmit_block(byte *data, word blk, word blockcnt);

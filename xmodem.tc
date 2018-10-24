@@ -1,0 +1,167 @@
+#include "global.th"
+#include "init.th"
+#include "modbus.th"
+
+bool upload_succesful=true;
+
+ioport *sp;
+/* \file xmodem.tc
+ * This file contains the X-Modem protocol realisation to upload firmware
+ * into the hexagon sensors
+ */
+
+#define XMODEM_PACKET_SIZE      128
+#define XMODEM_SOH              0x01
+#define XMODEM_EOT              0x04
+#define XMODEM_ACK              0x06 
+#define XMODEM_NACK             0x15
+#define XMODEM_ETB              0x17
+#define XMODEM_CAN              0x18
+#define XMODEM_16BITCRC         'C'
+#define XMODEM_EOF              0x1A    // Ctrl+Z
+#define MAX_RETRIES             10
+#define XMODEM_TIMEOUT			3000	// in ms
+
+
+bool
+do_xmodem_upload(string fwfile)
+{
+	kp.enabled=NO;
+	sp=get_pointer();
+	word blk, blockcnt;
+	dword bc;
+	byte *data;
+	string pkt;
+	word *temp;
+	
+// 0x0800 - 0x1FFF - Main Firmware
+// 0x0000 - 0x07FF - Monitor
+ 
+#define FW_OFFSET (0x0800*sizeof(word))
+
+	romfile.open(fwfile);
+    unsigned long ptr = romfile.pointer32;
+	unsigned long fwsize = romfile.size;
+
+	data = (byte *)ptr;
+	bc =   fwsize;
+	temp = (word *)data + FW_OFFSET;
+	
+	blockcnt = bc / XMODEM_PACKET_SIZE;
+	if(bc % XMODEM_PACKET_SIZE != 0)
+		++blockcnt;
+		
+ 	/*
+	 * The receiving side is sending NACK or 'C' to indicate that it ready to 
+	 * begin data exchange. NACK means that receiver will use 1-byte CRC and
+	 * 'C' indicates that CRC expected to be 16-bits.
+	 * After that, we begin to send 132 or 133-byte packets, 
+	 * which consists of SOH marker, packet number (and 0xFF-complement byte), 
+	 * 128 bytes of data and 1 or 2 bytes of CRC	
+	 */
+	 
+	for(;;) {
+		pkt = ser.getdata(255);
+		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C')
+			break;
+		else
+			kp.enabled=YES;
+			return false;
+	}
+
+	sys.debugprint("Got NACK from target\r\n");
+	sys.debugprint("Transferring "+str(blockcnt)+" blocks\r\n");
+	firmware_upload_in_prog_screen();
+	for(blk=1; blk<=blockcnt; ++blk) {
+		//doevents;
+		if(!transmit_block(data, blk, blockcnt))
+			break;
+		data += XMODEM_PACKET_SIZE;
+	}
+	
+	sys.debugprint("EOT\r\n");
+	serial_send(sp, chr(XMODEM_EOT));
+	
+	sys.debugprint("ETB\r\n");
+	serial_send(sp, chr(XMODEM_ETB));
+
+	sys.debugprint("Success\r\n");
+		if (upload_succesful)  
+		upload_successful_screen();
+		kp.enabled=YES;
+	return OK;
+}
+
+
+
+static bool
+transmit_block(byte *data, word blk, word blockcnt)
+{
+	string pkt, rpl;
+	byte retries;
+	byte i;
+	word cksum;
+	
+	for(retries=0;;) {
+		/* Header */
+		pkt = chr(XMODEM_SOH) + chr(blk & 0xFF) + chr(0xFF - (blk & 0xFF));
+		cksum = 0;
+		
+		/* Body */
+		for(i=0; i<XMODEM_PACKET_SIZE; ++i) {
+			pkt += chr(data[i]);
+			cksum += data[i];
+		}
+		
+		/* Checksum */
+		pkt += chr(cksum & 0xFF);
+
+		sys.debugprint("Sending packet #" + str(blk) + " of " + str(blockcnt) + "\r\n");
+		update_firmware_upload_screen(blk, blockcnt);
+#if 0		
+		DBG(wdump((byte *)&pkt[3]));
+		DBG(wdump((byte *)&pkt[32+3]));
+		DBG(wdump((byte *)&pkt[64+3]));
+		DBG(wdump((byte *)&pkt[96+3]));
+#endif
+
+retransmit:	
+		serial_send(sp, pkt);
+		sys.timercountms=0;
+		/* Check timeout */
+		do {
+			rpl = serial_recv(sp, 1);
+			if(sys.timercountms>3000)
+			{
+				upload_failed_screen();
+				upload_succesful=false;
+				return false;
+			}
+				
+		} while(rpl == "");
+
+		/* Parse reply packet
+		 */
+		switch(rpl[0]) {
+			case XMODEM_NACK:
+				sys.debugprint("NACK");
+				if(MAX_RETRIES == ++retries) {
+					sys.debugprint("Max. transmission retries ("+str(retries)+") reached. Giving up\r\n");
+					break;
+				}
+				sys.debugprint("Resending #" + str(blk) + "\r\n");
+				goto retransmit;
+				
+			case XMODEM_ACK:
+				sys.debugprint("ACK\r\n");
+				return true;
+				
+			default:
+				sys.debugprint("Got unknown reply\r\n");
+				break;
+		}
+	} 
+	return false;
+}
+
+

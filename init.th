@@ -1,5 +1,6 @@
 #ifndef __TPS_HAL_INCLUDED__
 #define __TPS_HAL_INCLUDED__
+
 #include "global.th"
 
 enum tibbit
@@ -183,16 +184,10 @@ enum hal_error {
 };
 
 extern void serial_setup(ioport *);
-extern void serial_init();
-extern bool is_serial_port(ioport *);
-extern bool serial_set_role(ioport *, serial_role);
-extern bool serial_set_type(ioport *, iotype);
 extern void serial_send(ioport *, string);
-extern void serial_remember_port(ioport *);
 extern string serial_recv(ioport *, byte);
 extern ioport *ioport_alloc(tbslot, iotype, char);
 extern hal_error tibbit_install(tbslot, tibbit);
-extern tibbit_slot *tibbit_get(tibbit, byte);
-extern iotype ioport_type(ioport *);
+
 
 #endif
