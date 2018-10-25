@@ -1,31 +1,19 @@
 include "display.tbh"
 
-dim MAX_NUM_OF_SENSORS as byte = 147
-dim MAX_SENSOR_ID_NUM as byte = 40
-dim MIN_SENSOR_ID_NUM as byte = 1
-
-dim sensor_no(147) as byte
-dim sensor_type(147) as byte
-dim sensor_data(147) as string
-
-dim poll_sensors as boolean=false
-dim ok_to_poll as boolean=false
-
+const MAX_NUM_OF_SENSORS = 147
+const MAX_SENSOR_ID_NUM = 10
+const MIN_SENSOR_ID_NUM = 1
+dim sensor_no(MAX_NUM_OF_SENSORS) as byte
+dim sensor_type(MAX_NUM_OF_SENSORS) as byte
+dim sensor_data(MAX_NUM_OF_SENSORS) as string
+dim poll_sensors, ok_to_poll as boolean=false
 dim pattern_timer as dword = sys.timercount32
-
-dim x,y,z as byte=0
-dim timer as byte=0
-dim screen as byte=0
+dim x,y,z,timer,LED,screen,total_detected_sensors,total_num_pages,current_page as byte=0
 dim id as byte = 1
-dim LED as byte=0
-dim total_detected_sensors as byte=0
-dim total_num_pages as byte=0
-dim current_page as byte=0
 
 'Initializes LCD screen
 
 sub lcd_init()
-
 	lcd.width=320
 	lcd.height=240
 	io.num=PL_IO_NUM_55
@@ -62,48 +50,65 @@ sub lcd_init()
 
 end sub
 
+'Handles Keypad Events
+
 sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 	if key_event=PL_KP_EVENT_PRESSED then
 		beep.play("B*",PL_BEEP_CANINT)
 		pat.play("G~",PL_PAT_CANINT)
+		
+		'Main screen
 		if screen=0 then
 			select case key_code
+			'Scan
 			case 0:
 				poll_sensors=false
 				scanning_sensors_screen()
 				lcd_scan()
-				ok_to_poll=true
+			'Poll
 			case 1:
 				if ok_to_poll=true then
 					poll_sensors=true
 					current_page=0
 				end if
+			'Upload Firmware
 			case 2:
 				poll_sensors=false
 				ok_to_poll=false
 				upload_firmware_screen()
 				screen=1
+			'Set ID
 			case 3:
 				poll_sensors=false
 				ok_to_poll=false
 				set_id_screen()		
 				screen=2
 			end select
+		
+		
+		'Upload Firmware Screen
 		else if screen=1 then
 			select case key_code
+			'Exit back to home screen
 			case 0:
 				home_screen()
 				screen=0
+			'Upload Hexagon Firwmare to sensor
 			case 2:
 				do_xmodem_upload("HexagonFirmware.bin")
+			'Upload Hexagon Monitor to sensor
 			case 3:
 				do_xmodem_upload("MonitorUpdater.bin")
 			end select
+			
+		'Set sensor ID screen
 		else if screen=2 then
 			select case key_code
+			'Exit back to home screen
 			case 0:
 				home_screen()
 				screen=0
+			'Decrease ID number
 			case 1:
 				if id>MIN_SENSOR_ID_NUM then
 					id=id-1
@@ -111,6 +116,7 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 					id=MAX_SENSOR_ID_NUM
 				end if
 				change_id()
+			'Increase ID number
 			case 2:
 				if id<MAX_SENSOR_ID_NUM then
 					id=id+1
@@ -118,12 +124,15 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 					id=MIN_SENSOR_ID_NUM
 				end if
 				change_id()
+			'Send command to change ID
 			case 3:
 				reprogram_address(0,id)
 			end select		
 		end if
 	end if	
 end sub
+
+'Display Home Screen
 
 sub home_screen()
 	lcd.lock
@@ -155,6 +164,8 @@ sub home_screen()
 	lcd.setfont(romfile.offset)	
 	lcd.unlock
 end sub
+
+'Displays set ID screen
 
 sub set_id_screen()
 	id=1
@@ -195,6 +206,8 @@ sub set_id_screen()
 	lcd.unlock
 end sub
 
+'Changes the ID when user presses keypad button
+
 sub change_id()
 	lcd.forecolor=0
 	lcd.fill(45,180,60,30)
@@ -204,6 +217,8 @@ sub change_id()
 	lcd.print(str(id),45,180)
 	lcd.forecolor=0	
 end sub
+
+'If a scan has been successfully completed and at least one sensor has been detected, sensors are polled every one second
 
 sub on_sys_timer()
 	if poll_sensors=true then
@@ -215,12 +230,15 @@ sub on_sys_timer()
 	end if
 end sub
 
+'Scans for sensors
+
 sub lcd_scan()
 	kp.enabled=NO
 	dim b as byte=0
 	dim percent as word
 	reset_sensors()
 	
+	'Sends modbus request to every sensor between min and max. If a response is received, that sensors ID is saved in the array "sensor_no"
 	for b=MIN_SENSOR_ID_NUM to MAX_SENSOR_ID_NUM
 		percent = (b*100)/MAX_SENSOR_ID_NUM
 		update_scanning_sensors_screen(percent)
@@ -231,6 +249,7 @@ sub lcd_scan()
 		scan_sensors(b)
 	next b
 	
+	'If sensor ID is saved in the array "sensor_no", gets the sensor type and stores it in the corresponding index in the array "sensor_type"
 	for b=0 to MAX_NUM_OF_SENSORS-1
 		if sensor_no(b)<>0 then
 			get_sensor_type(sensor_no(b))
@@ -240,6 +259,7 @@ sub lcd_scan()
 	scan_successful_screen()
 	lcd.lock
 	
+	'A maximum of 6 sensors can fit on the screen. Displays the first 6 detected sensors on the screen.
 	for b=0 to 5
 		if sensor_no(b)<>0 then
 			lcd.print(str(sensor_no(b)),10,90+(20*b))
@@ -252,6 +272,7 @@ sub lcd_scan()
 		end if
 	next b
 	
+	'Calculates the total number of pages necessary to display all of the sensors
 	if total_detected_sensors mod 6=0 then
 		total_num_pages=total_detected_sensors/6
 	else 
@@ -263,23 +284,26 @@ sub lcd_scan()
 	set_LED(&b00000)
 end sub
 
+'Polls all of the sensors and updates their values accordingly
 sub lcd_poll()
 	
+	'Calculates the start index based on the currently selected page. 
 	dim b,c as byte=0
 	dim start_index as byte = current_page * 6
 	x=start_index
 	y=start_index
 	z=start_index
 	
+	'For each index for the currently selected array, gets the sensor data depending on the sensor type.
 	for b=start_index to start_index+5
 		if sensor_no(b)<>0 then
 			get_sensor_data(sensor_no(b),sensor_type(b))
 		end if
 	next b	
-				
+	
+	'Prints the sensor data in the correct position on the screen.
 	dim position as word = 0
 	for b=start_index to start_index+5
-		
 		if sensor_no(b)<>0 then
 			lcd.print(str(sensor_no(b)),10,90+(20*position))
 			lcd.print(str(sensor_data(b)),190,90+(20*position))
@@ -318,6 +342,8 @@ sub lcd_poll()
 	
 end sub
 
+'Clears a line in order to update it with new sensor data
+
 sub clear_line(position as word)
 	
 	lcd.forecolor=0
@@ -326,12 +352,35 @@ sub clear_line(position as word)
 		
 end sub
 
+'Sets each sensors ID in the array "sensor_no"
+
 sub set_sensor_id(id as byte)
 
-sensor_no(x)=id
+	sensor_no(x)=id
 	x=x+1
 	
 end sub
+
+'Sets each sensors type in the corresponding index in the array "sensor_type"
+
+
+sub set_sensor_type(stype as byte)
+
+	sensor_type(y)=stype
+	y=y+1
+
+end sub
+
+'Sets each sensors data in the corresponding index in the array "sensor_data"
+
+sub set_sensor_data(data as string)
+
+	sensor_data(z)=data
+	z=z+1
+
+end sub
+
+'If sensors are being polled and more than 6 sensors have been detected, changes the page number to show more sensors
 
 sub on_button_pressed()
 	
@@ -351,20 +400,8 @@ sub on_button_pressed()
 	
 end sub
 
-sub set_sensor_type(stype as byte)
+'Shows the scanning sensor screen
 
-	sensor_type(y)=stype
-	y=y+1
-
-end sub
-	
-sub set_sensor_data(data as string)
-
-	sensor_data(z)=data
-	z=z+1
-
-end sub
-	
 sub scanning_sensors_screen()
 	
 	clear_screen()
@@ -372,6 +409,8 @@ sub scanning_sensors_screen()
 	lcd.print("Scanning for sensors",60,100)
 	
 end sub
+
+'Updates the progress of the sensor scanning
 
 sub update_scanning_sensors_screen(percent as word)
 	if percent<10 then
@@ -381,8 +420,10 @@ sub update_scanning_sensors_screen(percent as word)
 	end if
 	lcd.rectangle(60,170,260,190)
 	lcd.fill(60,170,percent*2,20)
-	led_upload_pattern()
+	led_scanning_sensors()
 end sub
+
+'Displays the firmware upload in progress screen
 
 sub firmware_upload_in_prog_screen()
 
@@ -391,6 +432,8 @@ sub firmware_upload_in_prog_screen()
 	lcd.print("Uploading Firmware",70,100)
 
 end sub
+
+'Updates the progress of the firmware uploading
 
 sub update_firmware_upload_screen(currentpack as word, totalpacks as word)
 
@@ -403,16 +446,18 @@ sub update_firmware_upload_screen(currentpack as word, totalpacks as word)
 	end if
 	lcd.rectangle(60,170,260,190)
 	lcd.fill(60,170,percent*2,20)
-	led_download_pattern()
+	led_firmware_uploading()
 	
 end sub
 
-sub upload_successful_screen()
+'Displays the upload successful screen
 
+sub upload_successful_screen()
+	
 	set_LED(&b11111)
 	clear_screen() 
 	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
-	lcd.print("Upload Successful!",80,120)
+	lcd.print("Upload Successful!",80,110)
 	sys.timercountms=0
 	while sys.timercountms<3000
 	wend
@@ -421,6 +466,24 @@ sub upload_successful_screen()
 	
 end sub
 
+
+'Displays the please wait screen
+
+sub please_wait_screen()
+
+	set_LED(&b11111)
+	clear_screen() 
+	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
+	lcd.print("Please Wait...",100,110)
+	sys.timercountms=0
+	while sys.timercountms<3000
+	wend
+	set_LED(&b00000)
+	
+end sub
+
+'Displays the scan successful screen
+
 sub scan_successful_screen()
 
 	set_LED(&b11111)
@@ -428,6 +491,9 @@ sub scan_successful_screen()
 	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
 	lcd.print("Scan Successful!",80,100)
 	lcd.print(str(x) +" Sensors Detected!",65,140)
+	if x>0 then
+		ok_to_poll=true
+	end if
 	sys.timercountms=0
 	while sys.timercountms<1000
 	wend
@@ -435,6 +501,8 @@ sub scan_successful_screen()
 	home_screen()
 	
 end sub
+
+'Displays the max number of sensors detected screen
 
 sub max_sensors_screen()
 
@@ -450,6 +518,8 @@ sub max_sensors_screen()
 	wend
 		
 end sub
+
+'Displays the upload firmware screen
 
 sub upload_firmware_screen()
 	
@@ -490,6 +560,8 @@ sub upload_firmware_screen()
 
 end sub
 
+'Sets the LED lights
+
 sub set_LED(pattern as byte)
 
 	dim f,x as byte
@@ -509,7 +581,9 @@ sub set_LED(pattern as byte)
 	
 end sub
 
-sub led_upload_pattern()
+'Plays a pattern on the LED lights to show sensors are being scanned
+
+sub led_scanning_sensors()
 	pat.play("~G",PL_PAT_CANINT)
 	if sys.timercount32-pattern_timer>=1 then
 		if LED<4 then
@@ -536,7 +610,9 @@ sub led_upload_pattern()
 	
 end sub
 
-sub led_download_pattern()
+'Plays a pattern on the LED lights to show firmware is uploading
+
+sub led_firmware_uploading()
 	pat.play("~G",PL_PAT_CANINT)
 	if sys.timercount32-pattern_timer>=1 then
 		if LED<4 then
@@ -561,6 +637,8 @@ sub led_download_pattern()
 	end select	
 	
 end sub
+
+'Shows upload failed screen
 
 sub upload_failed_screen()
 		
@@ -577,6 +655,8 @@ sub upload_failed_screen()
 		
 end sub
 
+'Shows unknown sensor detected screen
+
 sub unknown_sensor_screen()
 		
 	set_LED(&b11111)
@@ -590,6 +670,8 @@ sub unknown_sensor_screen()
 	home_screen()
 		
 end sub
+
+'Resets the array index counter for the sensor arrays
 
 sub reset_sensors()
 	
@@ -606,6 +688,8 @@ sub reset_sensors()
 	
 end sub
 
+'Clears the LCD screen
+
 sub clear_screen()
 
 	lcd.forecolor=0
@@ -614,6 +698,8 @@ sub clear_screen()
 	lcd.forecolor=65535 
 	
 end sub
+
+'Delays for a given number of milliseconds
 
 sub delay_ms(ms as dword)
 	sys.timercountms = 0

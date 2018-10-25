@@ -3,11 +3,6 @@
 
 bool upload_succesful=true;
 
-/* \file xmodem.tc
- * This file contains the X-Modem protocol realisation to upload firmware
- * into the hexagon sensors
- */
-
 #define XMODEM_PACKET_SIZE      128
 #define XMODEM_SOH              0x01
 #define XMODEM_EOT              0x04
@@ -16,10 +11,11 @@ bool upload_succesful=true;
 #define XMODEM_ETB              0x17
 #define XMODEM_CAN              0x18
 #define XMODEM_16BITCRC         'C'
-#define XMODEM_EOF              0x1A    // Ctrl+Z
+#define XMODEM_EOF              0x1A    
 #define MAX_RETRIES             10
-#define XMODEM_TIMEOUT			3000	// in ms
+#define XMODEM_TIMEOUT			3000	
 
+//Uploads firmware/monitor file to sensor via XModem
 
 bool
 do_xmodem_upload(string filename)
@@ -27,44 +23,41 @@ do_xmodem_upload(string filename)
 	kp.enabled=NO;
 	string data, pkt;
 	word job_size, block_num;
-
+	byte loop;
+	//Clears serial buffer and waits for 3 seconds to give sensor time to send "NACK"
+	ser.getdata(255);
+	please_wait_screen();
+	//If "NACK" is received, begins XModem upload. Otherwise shows failed screen.
 	for(;;) {
 		doevents;
 		pkt = ser.getdata(255);
-		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C'){
+		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C')
 			break;
-			}
-		else{
-			delay_ms(1000);
-			pkt = ser.getdata(255);
-			}
-		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C'){
-			break;
-			}
-		else{			
-			kp.enabled=YES;
-			return false;
-			}
-			
+		upload_failed_screen();
+		upload_succesful=false;
+		kp.enabled=YES;
+		return false;
 	}
+	//Carries out XModem upload. If the total number of blocks sent equal the total number of blocks, upload successful screen is displayed.
 	romfile.open(filename);
 	job_size=romfile.size/128;
 	firmware_upload_in_prog_screen();
 	for(block_num=1; block_num<=job_size; ++block_num) {
 		data=romfile.getdata(128);
+		if (block_num==job_size)
+			upload_succesful=true;
 		if(!transmit_block(data, block_num, job_size))
 			break;
 	}
-	
 	serial_send(chr(XMODEM_EOT));
 	serial_send(chr(XMODEM_ETB));
 	if (upload_succesful)  
 		upload_successful_screen();
-		kp.enabled=YES;
+	kp.enabled=YES;
 	return OK;
 }
 
-
+//Transmits a block of data using the XModem protocol
 
 static bool
 transmit_block(byte *data, word blk, word blockcnt)
@@ -73,63 +66,45 @@ transmit_block(byte *data, word blk, word blockcnt)
 	byte retries;
 	byte i;
 	word cksum;
-	
 	for(retries=0;;) {
-		/* Header */
+		// Header 
 		pkt = chr(XMODEM_SOH) + chr(blk & 0xFF) + chr(0xFF - (blk & 0xFF));
 		cksum = 0;
-		
-		/* Body */
+		//Body
 		for(i=0; i<XMODEM_PACKET_SIZE; ++i) {
 			pkt += chr(data[i]);
 			cksum += data[i];
 		}
-		
-		/* Checksum */
+		//
 		pkt += chr(cksum & 0xFF);
-
 		sys.debugprint("Sending packet #" + str(blk) + " of " + str(blockcnt) + "\r\n");
 		update_firmware_upload_screen(blk, blockcnt);
-#if 0		
-		DBG(wdump((byte *)&pkt[3]));
-		DBG(wdump((byte *)&pkt[32+3]));
-		DBG(wdump((byte *)&pkt[64+3]));
-		DBG(wdump((byte *)&pkt[96+3]));
-#endif
-
 retransmit:	
 		serial_send(pkt);
 		sys.timercountms=0;
-		/* Check timeout */
 		do {
 			rpl = ser.getdata(128);
+			//If waiting more than 3 seconds for a response, the upload is considered a failure and upload failed screen is displayed.
 			if(sys.timercountms>3000)
 			{
 				upload_failed_screen();
 				upload_succesful=false;
 				return false;
 			}
-				
 		} while(rpl == "");
-
-		/* Parse reply packet
-		 */
+		//Parses reply packet
 		switch(rpl[0]) {
 			case XMODEM_NACK:
-				sys.debugprint("NACK");
+				//If max retries is reached, returns fales
 				if(MAX_RETRIES == ++retries) {
-					sys.debugprint("Max. transmission retries ("+str(retries)+") reached. Giving up\r\n");
 					break;
 				}
-				sys.debugprint("Resending #" + str(blk) + "\r\n");
 				goto retransmit;
-				
 			case XMODEM_ACK:
-				sys.debugprint("ACK\r\n");
-				return true;
-				
+				//Processes ACK
+				return true;				
+				//If unknown reply is received, returns false
 			default:
-				sys.debugprint("Got unknown reply\r\n");
 				break;
 		}
 	} 

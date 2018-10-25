@@ -2,8 +2,6 @@ typedef unsigned char byte;
 typedef unsigned short word;
 typedef unsigned long dword;
 
-
-
 extern string modbus_result();
 extern string get_temp_and_hum(string rawdata, unsigned char w);
 extern string get_temp(string rawdata);
@@ -27,4 +25,4 @@ extern void serial_send(string data);
 extern void on_modbus_data_arrival();
 extern void modbus_init();
 extern void modbus_request(byte devaddr, byte request, word start, word count, string regdata);
-
+extern void please_wait_screen();

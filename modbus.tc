@@ -7,13 +7,16 @@ static dword _timeout;
 static string _packet; 	// data accumulation buffer
 static byte _pdu_len;	// PDU length byte
 
+//Initializes Modbus state as idle
+
 void
 modbus_init()
 {
 	_state = MODBUS_IDLE;
 }
 
-/* \brief CRC generation function */
+//Generates CRC
+
 word 
 crc16(byte *data, byte byte_cnt)
 {
@@ -29,8 +32,8 @@ crc16(byte *data, byte byte_cnt)
 	return (crc_hi << 8) | crc_lo;
 }
 
+//Issues a modbus request
 
-/*! \brief Issue ModBus request */
 void
 modbus_request(byte devaddr, byte request, word start, word count, string regdata)
 {
@@ -54,10 +57,8 @@ modbus_request(byte devaddr, byte request, word start, word count, string regdat
 	serial_send(data);
 }
 
-/* This routine should be called either from on_sock_data_arrival() or 
- * on_ser_data_arrival() event handlers
- * Routine receives and parses ModBus PDU
- */
+//Receives and parses ModBus PDU
+
 void
 on_modbus_data_arrival()
 {
@@ -90,6 +91,9 @@ on_modbus_data_arrival()
 		}
 	}
 }
+
+//Reprograms sensor address
+
 void
 reprogram_address(byte oldaddr, byte newaddr)
 {
@@ -97,6 +101,8 @@ reprogram_address(byte oldaddr, byte newaddr)
 	args = chr(0) +  chr(newaddr);
 	modbus_request(oldaddr, PRESET_SINGLE_REGISTER, SCAN_SENSORS, 1, args);
 }
+
+//Scan sensors and waits for 0.1 seconds for a response
 
 void
 scan_sensors(unsigned char w)
@@ -108,6 +114,8 @@ scan_sensors(unsigned char w)
 	}
 }
 
+//Gets sensor type
+
 void
 get_sensor_type(unsigned char w)
 {
@@ -118,6 +126,9 @@ get_sensor_type(unsigned char w)
 	result=result[4];
 	set_sensor_type(result);
 }
+
+
+//Sends request to get data depending on the sensor type. Handles request accordingly.
 
 void
 get_sensor_data(unsigned char w,unsigned char x)
@@ -156,6 +167,8 @@ get_sensor_data(unsigned char w,unsigned char x)
 	set_sensor_data(result);
 }
 
+//Polls temperature and humidity sensor
+
 string 
 get_temp_and_hum(string rawdata, unsigned char w){
 	string temp, hum, result;
@@ -176,6 +189,8 @@ get_temp_and_hum(string rawdata, unsigned char w){
 	return result;
 } 
 
+//Polls temperature sensor
+
 string 
 get_temp(string rawdata){
 	string temp;
@@ -187,6 +202,8 @@ get_temp(string rawdata){
 	return temp;
 }
 
+//Polls light sensor
+
 string 
 get_light(string rawdata){
 	string light;
@@ -194,6 +211,9 @@ get_light(string rawdata){
 	light=val(light);
 	return light;
 }
+
+
+//Converts hex value to decimal value
 
 string
 hex_to_dec(string hi,string lo)
@@ -209,6 +229,7 @@ hex_to_dec(string hi,string lo)
 	return dec_val;	
 }
 
+//Waits 0.1 seconds for a response from sensor
 void get_response(){
 	sys.timercountms=0;
 	while(!modbus_finished()){
@@ -219,11 +240,15 @@ void get_response(){
 	}
 }
 
+//Changes modbus state to finished
+
 bool
 modbus_finished()
 {
 	return _state == MODBUS_FINISHED;
 }
+
+//Returns results of modbus request
 
 string
 modbus_result()

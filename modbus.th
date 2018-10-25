@@ -42,12 +42,14 @@ static byte _crc_table_lo[] =
 	0x44,0x84,0x85,0x45,0x87,0x47,0x46,0x86,0x82,0x42,0x43,0x83,0x41,0x81,0x80,0x40,
 };
 
+//Modbus state
 enum modbus_state {
 	MODBUS_IDLE,
 	MODBUS_RECEIVING,
 	MODBUS_FINISHED
 };
 
+//Modbus function codes
 enum modbus_func_code {
 	READ_HOLDING_REGISTERS 		= 3,
 	READ_INPUT_REGISTERS 		= 4,
@@ -60,13 +62,14 @@ enum modbus_func_code {
 	READ_LIGHT_VALUE			= 500
 };
 
-/* ModBus request header */
+// ModBus request header 
 struct modbus_reqhdr {
 	byte func_code;
 	word address;
 	word count;
 };
 
+//Modbus request
 struct modbus_req {
 	byte addr;
 	modbus_reqhdr hdr;

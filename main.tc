@@ -9,12 +9,14 @@ on_sys_init()
 	lcd_init();
 }
 
+//Initializes the serial port and IO lines for a Tibbit 05 in serial slot 0
+
 void
 serial_setup()
 {	
 	io.num = 0;
 	io.enabled = YES;
-	io.state = HIGH;
+	io.state = HIGH;	
 	ser.num = 0;
 	ser.rxbuffrq(2);
 	ser.txbuffrq(2);
@@ -32,12 +34,12 @@ serial_setup()
 	ser.enabled = YES;	
 }
 
+//Sends data through the serial port
+
 void
 serial_send(string data)
 {
-	ser.num = 0;
 	ser.notifysent(1);
 	ser.setdata(data);
 	ser.send();
 }
-
