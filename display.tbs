@@ -1,7 +1,7 @@
 include "display.tbh"
 
 const MAX_NUM_OF_SENSORS = 147
-const MAX_SENSOR_ID_NUM = 10
+const MAX_SENSOR_ID_NUM = 147
 const MIN_SENSOR_ID_NUM = 1
 dim sensor_no(MAX_NUM_OF_SENSORS) as byte
 dim sensor_type(MAX_NUM_OF_SENSORS) as byte
@@ -651,8 +651,9 @@ sub upload_failed_screen()
 	while sys.timercountms<3000
 	wend
 	set_LED(&b00000)
+	screen=0
 	home_screen()
-		
+			
 end sub
 
 'Shows unknown sensor detected screen

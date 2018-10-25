@@ -46,7 +46,8 @@ static byte _crc_table_lo[] =
 enum modbus_state {
 	MODBUS_IDLE,
 	MODBUS_RECEIVING,
-	MODBUS_FINISHED
+	MODBUS_FINISHED,
+	MODBUS_RESEND
 };
 
 //Modbus function codes

@@ -70,7 +70,6 @@ on_modbus_data_arrival()
 		case MODBUS_IDLE:
 			_packet = "";
 			_state = MODBUS_RECEIVING;
-			/* fall through to the next case */
 		case MODBUS_RECEIVING:
 			_packet += tmp;
 			break;
@@ -86,7 +85,73 @@ on_modbus_data_arrival()
 				_state = MODBUS_FINISHED;			
 			}
 			else{
-				unknown_sensor_screen();
+				
+			}
+		}
+	}
+}
+
+//Scans sensor and waits 0.1 seconds for a response
+
+bool
+scan_sensors(unsigned char w)
+{
+	modbus_request(w, READ_HOLDING_REGISTERS, SCAN_SENSORS, 4, "");
+	
+	sys.timercountms=0;
+	while(!modbus_finished()){
+		modbus_first_scan();
+		if (sys.timercountms>100){
+		break;
+		}
+	}
+	if (modbus_finished()){
+		set_sensor_id(w);
+		return true;
+	}
+	
+	if(modbus_resend()){
+	modbus_request(w, READ_HOLDING_REGISTERS, SCAN_SENSORS, 4, "");
+	get_response();
+	}
+	
+	if (modbus_finished()){
+		set_sensor_id(w);
+	}
+	return true;
+	
+}
+
+//On the first scan of the sensors, the first data packet is not always received correctly. This first scan detects this situation and changes state so that a second request is sent if necessary.
+
+void
+modbus_first_scan()
+{
+	string tmp = "";
+	tmp = ser.getdata(255);
+	switch(_state) {
+		case MODBUS_FINISHED:
+			sys.debugprint("Previous ModBus packet was not processed");
+		case MODBUS_IDLE:
+			_packet = "";
+			_state = MODBUS_RECEIVING;
+		case MODBUS_RECEIVING:
+			_packet += tmp;
+			break;
+	}
+	if(len(_packet) >= 2) {
+		_pdu_len = _packet[2] + 5; // Byte count, including slave address, crc, byte length and function code
+		if(len(_packet) >= _pdu_len) {
+			byte x;
+			for (x=0;x<100;x++){}
+			//char c = "&hFF" 
+			string c1 = _packet[9];
+			string c2 = _packet[10];
+			if(c1=="-86"  && c2=="85"){	
+				_state = MODBUS_FINISHED;			
+			}
+			else{
+				_state = MODBUS_RESEND;
 			}
 		}
 	}
@@ -104,15 +169,7 @@ reprogram_address(byte oldaddr, byte newaddr)
 
 //Scan sensors and waits for 0.1 seconds for a response
 
-void
-scan_sensors(unsigned char w)
-{
-	modbus_request(w, READ_HOLDING_REGISTERS, SCAN_SENSORS, 4, "");
-	get_response();
-	if (modbus_finished()){
-		set_sensor_id(w);
-	}
-}
+
 
 //Gets sensor type
 
@@ -240,12 +297,20 @@ void get_response(){
 	}
 }
 
-//Changes modbus state to finished
+//Returns Modbus true if Modbus state is finished
 
 bool
 modbus_finished()
 {
 	return _state == MODBUS_FINISHED;
+}
+
+//Returns Modbus true if Modbus state is resend
+
+bool
+modbus_resend()
+{
+	return _state == MODBUS_RESEND;
 }
 
 //Returns results of modbus request
