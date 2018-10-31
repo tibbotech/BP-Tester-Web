@@ -167,10 +167,6 @@ reprogram_address(byte oldaddr, byte newaddr)
 	modbus_request(oldaddr, PRESET_SINGLE_REGISTER, SCAN_SENSORS, 1, args);
 }
 
-//Scan sensors and waits for 0.1 seconds for a response
-
-
-
 //Gets sensor type
 
 void
@@ -182,6 +178,41 @@ get_sensor_type(unsigned char w)
 	result = modbus_result();
 	result=result[4];
 	set_sensor_type(result);
+}
+
+//Gets monitor version
+
+void
+get_monitor_version(unsigned char w)
+{
+	string result;
+	modbus_request(w, READ_INPUT_REGISTERS, GET_MONITOR_VERSION, 1, "");
+	get_response();
+	result = modbus_result();
+	result=get_version(result);
+	set_monitor_version(result);
+}
+
+//Gets firmware version
+
+void
+get_firmware_version(unsigned char w)
+{
+	string result;
+	modbus_request(w, READ_INPUT_REGISTERS, GET_FIRMWARE_VERSION, 1, "");
+	get_response();
+	result = modbus_result();
+	result=get_version(result);
+	set_firmware_version(result);
+}
+
+//Polls temperature sensor
+
+string 
+get_version(string rawdata){
+	string version;
+	version=str(rawdata[3])+"."+str(rawdata[4]);
+	return version;
 }
 
 

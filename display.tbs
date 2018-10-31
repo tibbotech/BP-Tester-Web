@@ -1,14 +1,16 @@
 include "display.tbh"
 
-const MAX_NUM_OF_SENSORS = 147
-const MAX_SENSOR_ID_NUM = 147
+const MAX_NUM_OF_SENSORS = 50
+const MAX_SENSOR_ID_NUM = 247
 const MIN_SENSOR_ID_NUM = 1
 dim sensor_no(MAX_NUM_OF_SENSORS) as byte
 dim sensor_type(MAX_NUM_OF_SENSORS) as byte
 dim sensor_data(MAX_NUM_OF_SENSORS) as string
-dim poll_sensors, ok_to_poll as boolean=false
+dim monitor_version(MAX_NUM_OF_SENSORS) as string
+dim firmware_version(MAX_NUM_OF_SENSORS) as string
+dim poll_sensors, ok_to_poll,scan_screen as boolean=false
 dim pattern_timer as dword = sys.timercount32
-dim x,y,z,timer,LED,screen,total_detected_sensors,total_num_pages,current_page as byte=0
+dim x,y,z,m,v,timer,LED,screen,total_detected_sensors,total_num_pages,current_page as byte=0
 dim id as byte = 1
 
 'Initializes LCD screen
@@ -67,18 +69,22 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 				lcd_scan()
 			'Poll
 			case 1:
+				scan_screen=false
 				if ok_to_poll=true then
 					poll_sensors=true
+					change_column_name()
 					current_page=0
 				end if
 			'Upload Firmware
 			case 2:
+				scan_screen=false
 				poll_sensors=false
 				ok_to_poll=false
 				upload_firmware_screen()
 				screen=1
 			'Set ID
 			case 3:
+				scan_screen=false
 				poll_sensors=false
 				ok_to_poll=false
 				set_id_screen()		
@@ -95,10 +101,12 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 				screen=0
 			'Upload Hexagon Firwmare to sensor
 			case 2:
-				do_xmodem_upload("HexagonFirmware.bin")
+				firmware_upload_screen()
+				screen=3
 			'Upload Hexagon Monitor to sensor
 			case 3:
-				do_xmodem_upload("MonitorUpdater.bin")
+				monitor_upload_screen()
+				screen=4
 			end select
 			
 		'Set sensor ID screen
@@ -128,6 +136,26 @@ sub on_kp(key_event as pl_kp_event_codes, key_code as byte)
 			case 3:
 				reprogram_address(0,id)
 			end select		
+		else if screen=3 then
+			select case key_code
+			'Exit back to home screen
+			case 0:
+				home_screen()
+				screen=0
+			case 3:
+				screen=1
+				do_xmodem_upload("HexagonFirmware.bin")
+			end select				
+		else if screen=4 then
+			select case key_code
+			'Exit back to home screen
+			case 0:
+				home_screen()
+				screen=0
+			case 3:
+				screen=1
+				do_xmodem_upload("MonitorUpdater.bin")
+			end select		
 		end if
 	end if	
 end sub
@@ -149,7 +177,8 @@ sub home_screen()
 	lcd.verline(315,40,240)
 	lcd.print("ID",10,50)
 	lcd.print("Type",70,50)
-	lcd.print("Data",190,50)
+	lcd.print("MV",180,50)
+	lcd.print("FV",255,50)
 	lcd.horline(5,315,75)
 	lcd.horline(5,315,220)
 	romfile.open("Tibbo-5x7(V).bin")
@@ -253,24 +282,24 @@ sub lcd_scan()
 	for b=0 to MAX_NUM_OF_SENSORS-1
 		if sensor_no(b)<>0 then
 			get_sensor_type(sensor_no(b))
-		end if
+			end if
 	next b	
 	total_detected_sensors=x
 	scan_successful_screen()
 	lcd.lock
 	
-	'A maximum of 6 sensors can fit on the screen. Displays the first 6 detected sensors on the screen.
-	for b=0 to 5
+	for b=0 to MAX_NUM_OF_SENSORS-1
 		if sensor_no(b)<>0 then
-			lcd.print(str(sensor_no(b)),10,90+(20*b))
-			lcd.print("0",190,90+(20*b))
-			select case sensor_type(b)
-			case 1:lcd.print("Temp/Hum",70,90+(20*b))
-			case 2:lcd.print("Temp",70,90+(20*b))
-			case 3:lcd.print("Light",70,90+(20*b))
-			end select
+			get_monitor_version(sensor_no(b))
+			end if
+	next b	
+	
+	for b=0 to MAX_NUM_OF_SENSORS-1
+		if sensor_no(b)<>0 then
+			get_firmware_version(sensor_no(b))
 		end if
-	next b
+	next b	
+	
 	
 	'Calculates the total number of pages necessary to display all of the sensors
 	if total_detected_sensors mod 6=0 then
@@ -279,9 +308,51 @@ sub lcd_scan()
 		total_num_pages=(total_detected_sensors/6)+1
 	end if
 	
+	lcd_show_firmware()
+	
 	lcd.unlock
 	kp.enabled=YES
 	set_LED(&b00000)
+	scan_screen=true
+	
+end sub
+
+'Shows the monitor version and firmare version for each of the attached sensors
+
+sub lcd_show_firmware()
+
+	'Calculates the start index based on the currently selected page. 
+	dim b,c as byte=0
+	dim start_index as byte = current_page * 6
+	dim position as word = 0
+	'A maximum of 6 sensors can fit on the screen. Displays the first 6 detected sensors on the screen.
+	for b=start_index to start_index+5
+		if sensor_no(b)<>0 then
+			lcd.print(str(sensor_no(b)),10,90+(20*position))
+			lcd.print(monitor_version(b),180,90+(20*position))
+			lcd.print(firmware_version(b),255,90+(20*position))
+			select case sensor_type(b)
+			case 1:lcd.print("Temp/Hum",70,90+(20*position))
+			case 2:lcd.print("Temp",70,90+(20*position))
+			case 3:lcd.print("Light",70,90+(20*position))
+			end select
+		end if
+		position=position+1
+	next b
+	lcd.print("Page "+ str(current_page+1)+"/"+str(total_num_pages),227,12)
+	
+end sub
+
+'Erases "MV" and "FV" in the column name, replaces with "Data"
+
+sub change_column_name()
+	
+	lcd.lock
+	lcd.forecolor=0
+	lcd.fill(180,50,124,17)
+	lcd.forecolor=65535
+	lcd.print("Data",180,50)
+	lcd.unlock
 end sub
 
 'Polls all of the sensors and updates their values accordingly
@@ -306,32 +377,32 @@ sub lcd_poll()
 	for b=start_index to start_index+5
 		if sensor_no(b)<>0 then
 			lcd.print(str(sensor_no(b)),10,90+(20*position))
-			lcd.print(str(sensor_data(b)),190,90+(20*position))
+			lcd.print(str(sensor_data(b)),180,90+(20*position))
 			select case sensor_type(b)
 			case 1:
 				clear_line(position)
 				lcd.print("Temp/Hum",70,90+(20*position))
 				if sensor_data(b)="" then
-					lcd.print("Offline",190,90+(20*position))
+					lcd.print("Offline",180,90+(20*position))
 				else
 					c=instr(1,sensor_data(b),"x",1)
-					lcd.print(left(sensor_data(b),c-1)+ "C " + right(sensor_data(b),len(sensor_data(b))-c) + "%",190,90+(20*position))
+					lcd.print(left(sensor_data(b),c-1)+ "C " + right(sensor_data(b),len(sensor_data(b))-c) + "%",180,90+(20*position))
 				end if				
 			case 2:
 				clear_line(position)
 				lcd.print("Temp",70,90+(20*position))
 				if sensor_data(b)="" then
-					lcd.print("Offline",190,90+(20*position))
+					lcd.print("Offline",180,90+(20*position))
 				else
-					lcd.print(sensor_data(b)+ "C",190,90+(20*position))
+					lcd.print(sensor_data(b)+ "C",180,90+(20*position))
 				end if
 			case 3:
 				clear_line(position)
 				lcd.print("Light",70,90+(20*position))
 				if sensor_data(b)="" then
-					lcd.print("Offline",190,90+(20*position))
+					lcd.print("Offline",180,90+(20*position))
 				else
-					lcd.print(sensor_data(b)+ " lx",190,90+(20*position))
+					lcd.print(sensor_data(b)+ " lx",180,90+(20*position))
 				end if
 			end select
 		end if
@@ -347,7 +418,7 @@ end sub
 sub clear_line(position as word)
 	
 	lcd.forecolor=0
-	lcd.fill(190,90+(20*position),124,17)
+	lcd.fill(180,90+(20*position),124,17)
 	lcd.forecolor=65535
 		
 end sub
@@ -380,12 +451,30 @@ sub set_sensor_data(data as string)
 
 end sub
 
+'Sets each sensors monitor version in the corresponding index in the array "monitor_version"
+
+
+sub set_monitor_version(data as string)
+
+	monitor_version(m)=data
+	m=m+1
+
+end sub
+
+'Sets each sensors firmware version in the corresponding index in the array "firmware_version"
+
+sub set_firmware_version(data as string)
+
+	firmware_version(v)=data
+	v=v+1
+
+end sub
+
 'If sensors are being polled and more than 6 sensors have been detected, changes the page number to show more sensors
 
 sub on_button_pressed()
 	
 	if poll_sensors=true then
-	
 		if current_page<total_num_pages-1 then
 			current_page=current_page+1
 		else
@@ -396,6 +485,18 @@ sub on_button_pressed()
 		lcd.fill(6,80,308,135)
 		lcd.forecolor=65535	
 		lcd.unlock
+	else if scan_screen=true then
+		if current_page<total_num_pages-1 then
+			current_page=current_page+1
+		else
+			current_page=0
+		end if
+		lcd.lock
+		lcd.forecolor=0
+		lcd.fill(6,80,308,135)
+		lcd.forecolor=65535
+		lcd_show_firmware()
+		lcd.unlock		
 	end if
 	
 end sub
@@ -550,6 +651,46 @@ sub upload_firmware_screen()
 	lcd.bmp(romfile.offset,245,0,0,0,lcd.width,lcd.height)
 	romfile.open("11x19(HP).bin")
 	lcd.setfont(romfile.offset)	
+	lcd.printaligned("Select Upload Firmware or Upload Monitor", 15,50,295,160)
+	lcd.print("Firmware Version:", 15,120)
+	lcd.forecolor=val("&b"+strgen(lcd.greenbits/&hFF,"1")+strgen(lcd.greenbits And &hFF,"0"))
+	lcd.print("1.1", 179,120)
+	lcd.forecolor=65535 
+	lcd.print("Monitor Version:", 15,164)
+	lcd.forecolor=val("&b"+strgen(lcd.greenbits/&hFF,"1")+strgen(lcd.greenbits And &hFF,"0"))
+	lcd.print("1.1", 168,165)
+	lcd.forecolor=65535 
+	lcd.unlock
+
+end sub
+
+'Displays the upload firmware screen
+
+sub monitor_upload_screen()
+	
+	lcd.lock
+	clear_screen()
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)
+	lcd.print("Upload",5,12)
+	lcd.horline(5,315,40)
+	lcd.verline(5,40,240)
+	lcd.verline(80,220,240)
+	lcd.verline(160,220,240)
+	lcd.verline(240,220,240)
+	lcd.horline(5,315,239)
+	lcd.verline(315,40,240)
+	lcd.horline(5,315,220)
+	romfile.open("Tibbo-5x7(V).bin")
+	lcd.setfont(romfile.offset)	
+	lcd.forecolor=25544
+	lcd.print("Exit",30,227)
+	lcd.print("Upload",258,227)
+	lcd.forecolor=65535 
+	romfile.open("logosmall.bmp")
+	lcd.bmp(romfile.offset,245,0,0,0,lcd.width,lcd.height)
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)	
 	lcd.printaligned("1. Disconnect sensor power.", 15,50,295,160)
 	lcd.printaligned("2. Press and hold MD button on sensor.", 15,75,295,160)
 	lcd.printaligned("3. Connect power without releasing MD button", 15,120,295,160)
@@ -559,6 +700,44 @@ sub upload_firmware_screen()
 	lcd.unlock
 
 end sub
+
+'Displays the upload firmware screen
+
+sub firmware_upload_screen()
+	
+	lcd.lock
+	clear_screen()
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)
+	lcd.print("Upload",5,12)
+	lcd.horline(5,315,40)
+	lcd.verline(5,40,240)
+	lcd.verline(80,220,240)
+	lcd.verline(160,220,240)
+	lcd.verline(240,220,240)
+	lcd.horline(5,315,239)
+	lcd.verline(315,40,240)
+	lcd.horline(5,315,220)
+	romfile.open("Tibbo-5x7(V).bin")
+	lcd.setfont(romfile.offset)	
+	lcd.forecolor=25544
+	lcd.print("Exit",30,227)
+	lcd.print("Upload",258,227)
+	lcd.forecolor=65535 
+	romfile.open("logosmall.bmp")
+	lcd.bmp(romfile.offset,245,0,0,0,lcd.width,lcd.height)
+	romfile.open("11x19(HP).bin")
+	lcd.setfont(romfile.offset)	
+	lcd.printaligned("1. Disconnect sensor power.", 15,50,295,160)
+	lcd.printaligned("2. Press and hold MD button on sensor.", 15,75,295,160)
+	lcd.printaligned("3. Connect power without releasing MD button", 15,120,295,160)
+	lcd.printaligned("4. Release the MD button.", 15,165,295,160)
+	lcd.printaligned("5. Press upload.", 15,190,295,160)
+	lcd.forecolor=0
+	lcd.unlock
+
+end sub
+
 
 'Sets the LED lights
 
@@ -680,11 +859,15 @@ sub reset_sensors()
 	x=0
 	y=0
 	z=0
+	m=0
+	v=0
 	
 	for counter=0 to MAX_NUM_OF_SENSORS-1
 		sensor_no(counter)=0
 		sensor_type(counter)=0
 		sensor_data(counter)=0
+		monitor_version(counter)=0
+		firmware_version(counter)=0
 	next counter
 	
 end sub
