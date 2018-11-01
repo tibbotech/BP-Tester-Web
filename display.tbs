@@ -332,6 +332,7 @@ sub lcd_show_firmware()
 			lcd.print(monitor_version(b),180,90+(20*position))
 			lcd.print(firmware_version(b),255,90+(20*position))
 			select case sensor_type(b)
+			case 0:lcd.print("Unknown",70,90+(20*position))
 			case 1:lcd.print("Temp/Hum",70,90+(20*position))
 			case 2:lcd.print("Temp",70,90+(20*position))
 			case 3:lcd.print("Light",70,90+(20*position))
@@ -379,6 +380,10 @@ sub lcd_poll()
 			lcd.print(str(sensor_no(b)),10,90+(20*position))
 			lcd.print(str(sensor_data(b)),180,90+(20*position))
 			select case sensor_type(b)
+			case 0:
+				clear_line(position)
+				lcd.print("Unknown",70,90+(20*position))
+				lcd.print("Unknown",180,90+(20*position))
 			case 1:
 				clear_line(position)
 				lcd.print("Temp/Hum",70,90+(20*position))
@@ -844,7 +849,7 @@ sub unknown_sensor_screen()
 	lcd.rectangle(20,20,lcd.width-20,lcd.height-20)
 	lcd.print("Unknown Sensor Detected!",40,120)
 	sys.timercountms=0
-	while sys.timercountms<3000
+	while sys.timercountms<1000
 	wend
 	set_LED(&b00000)
 	home_screen()

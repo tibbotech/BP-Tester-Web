@@ -177,7 +177,12 @@ get_sensor_type(unsigned char w)
 	get_response();
 	result = modbus_result();
 	result=result[4];
-	set_sensor_type(result);
+	if (result=="1"|| result=="2" || result=="3"){
+		set_sensor_type(result);
+	} else {
+		set_sensor_type(0);
+		unknown_sensor_screen();
+	}
 }
 
 //Gets monitor version
@@ -224,6 +229,9 @@ get_sensor_data(unsigned char w,unsigned char x)
 	string result, rawdata;
 	
 	switch(x){
+	case 0:
+		result="Unknown";
+		break;
 	case 1:	//temp&hum
 		modbus_request(w, READ_INPUT_REGISTERS, READ_TEMP_H_VALUE, 1, "");
 		break;
@@ -239,6 +247,7 @@ get_sensor_data(unsigned char w,unsigned char x)
 	rawdata = modbus_result();
 	if(rawdata != "") {
 			switch(x) {
+				
 				case 1:
 					result=get_temp_and_hum(rawdata, w);
 					break;
@@ -249,7 +258,6 @@ get_sensor_data(unsigned char w,unsigned char x)
 					result=get_light(rawdata);
 					break;
 				default:
-				return;
 		}
 	}
 	set_sensor_data(result);
