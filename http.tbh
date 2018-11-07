@@ -1,0 +1,41 @@
+declare sub modbus_init()
+declare sub lcd_scan()
+declare sub lcd_poll()
+declare sub reset_sensors()
+declare sub set_sensor_id(id as byte)
+declare sub set_sensor_id(id as byte)
+declare sub set_sensor_type(stype as byte)
+declare sub set_sensor_data(data as string)
+declare sub get_sensor_type(id as byte)
+declare sub get_sensor_data(id as byte, stype as byte)
+declare sub upload_successful_screen()
+declare sub reprogram_address(oldaddr as byte, newaddr as byte)
+declare sub do_xmodem_upload(filename as string)
+declare sub upload_failed_screen()
+declare function scan_sensors(id as byte) as boolean
+declare sub get_firmware_version(id as byte)
+declare sub get_monitor_version(id as byte)
+
+
+const MAX_NUM_OF_SENSORS = 20
+const MAX_SENSOR_ID_NUM = 10
+
+type sens_data
+	sens_no(MAX_NUM_OF_SENSORS) as byte
+	sens_type(MAX_NUM_OF_SENSORS) as byte
+	sens_data(MAX_NUM_OF_SENSORS) as string
+	sens_data_parsed(MAX_NUM_OF_SENSORS) as string
+	mon_ver(MAX_NUM_OF_SENSORS) as string
+	firm_ver(MAX_NUM_OF_SENSORS) as string
+	poll_sensors as boolean
+end type
+
+type sens_state
+	poll_sensors as boolean
+	scan_started as boolean
+	total_sensors_detected as byte
+end type
+
+
+declare current_sensor_data as sens_data
+declare current_sensor_state as sens_state

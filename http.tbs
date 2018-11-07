@@ -1,0 +1,226 @@
+include "http.tbh"
+include "global.tbh"
+
+dim x,y,z,m,v,timer as byte=0
+dim id as byte = 1
+
+dim current_sensor_data as sens_data
+dim current_sensor_state as sens_state
+
+
+sub on_sys_timer()
+	if current_sensor_state.poll_sensors=true then
+		timer=timer+1
+		if timer>=2 then
+			lcd_poll()
+			timer=0
+		end if
+	end if
+	
+	dhcp_proc_timer()
+end sub
+
+'Scans for sensors
+
+sub lcd_scan()
+	dim b as byte=0
+	reset_sensors()
+	
+	'Sends modbus request to every sensor between min and max. If a response is received, that sensors ID is saved in the array "sensor_no"
+	for b=1 to MAX_SENSOR_ID_NUM
+		scan_sensors(b)
+	next b
+	
+	'If sensor ID is saved in the array "sensor_no", gets the sensor type and stores it in the corresponding index in the array "sensor_type"
+	for b=0 to MAX_NUM_OF_SENSORS-1
+		if current_sensor_data.sens_no(b)<>0 then
+			get_sensor_type(current_sensor_data.sens_no(b))
+		end if
+	next b	
+	
+	for b=0 to MAX_NUM_OF_SENSORS-1
+		if current_sensor_data.sens_no(b)<>0 then
+			get_monitor_version(current_sensor_data.sens_no(b))
+			end if
+	next b	
+	
+	for b=0 to MAX_NUM_OF_SENSORS-1
+		if current_sensor_data.sens_no(b)<>0 then
+			get_firmware_version(current_sensor_data.sens_no(b))
+		end if
+	next b	
+	
+	
+	current_sensor_state.total_sensors_detected=x
+	
+end sub
+
+'Polls all of the sensors and updates their values accordingly
+sub lcd_poll()
+	
+	dim data as string
+	dim b, c  as byte=0
+	x=0
+	y=0
+	z=0
+	
+	'For each index for the currently selected array, gets the sensor data depending on the sensor type.
+	for b=0 to MAX_NUM_OF_SENSORS-1
+		if current_sensor_data.sens_no(b)<>0 then
+			get_sensor_data(current_sensor_data.sens_no(b),current_sensor_data.sens_type(b))
+		end if
+		if current_sensor_data.sens_no(b)<>0 then
+			select case current_sensor_data.sens_type(b)
+				case 0: 
+					data="Unknown"
+				case 1:
+					if current_sensor_data.sens_data(b)="" then
+						data="Offline"
+					else
+						c=instr(1,current_sensor_data.sens_data(b),"x",1)
+						data=left(current_sensor_data.sens_data(b),c-1)+ "°C " + right(current_sensor_data.sens_data(b),len(current_sensor_data.sens_data(b))-c) + "%"
+					end if				
+				case 2:
+					if current_sensor_data.sens_data(b)="" then
+						data="Offline"
+					else
+						data=(current_sensor_data.sens_data(b) + "°C")
+					end if
+				case 3:
+					if current_sensor_data.sens_data(b)="" then
+						data="Offline"
+					else
+						data=current_sensor_data.sens_data(b) + " lux"
+					end if
+			end select
+			current_sensor_data.sens_data_parsed(b)=data
+		end if
+	next b	
+	
+end sub
+
+'Sets each sensors ID in the array "sensor_no"
+
+sub set_sensor_id(id as byte)
+
+	current_sensor_data.sens_no(x)=id
+	x=x+1
+	
+end sub
+
+'Sets each sensors type in the corresponding index in the array "sensor_type"
+
+sub set_sensor_type(stype as byte)
+
+	current_sensor_data.sens_type(y)=stype
+	y=y+1
+
+end sub
+
+'Sets each sensors data in the corresponding index in the array "sensor_data"
+
+sub set_sensor_data(data as string)
+
+	current_sensor_data.sens_data(z)=data
+	z=z+1
+
+end sub
+	
+sub set_monitor_version(data as string)
+
+	current_sensor_data.mon_ver(m)=data
+	m=m+1
+
+end sub
+
+'Sets each sensors firmware version in the corresponding index in the array "firmware_version"
+
+sub set_firmware_version(data as string)
+
+	current_sensor_data.firm_ver(v)=data
+	v=v+1
+
+
+end sub
+
+'Displays the upload successful screen
+
+sub upload_successful_screen()
+end sub
+
+'Shows upload failed screen
+
+sub upload_failed_screen()
+end sub
+
+
+'Resets the array index counter for the sensor arrays
+
+sub reset_sensors()
+	
+	dim counter as byte
+	x=0
+	y=0
+	z=0
+	m=0
+	v=0
+	
+	for counter=0 to MAX_NUM_OF_SENSORS-1
+		current_sensor_data.sens_no(counter)=0
+		current_sensor_data.sens_type(counter)=0
+		current_sensor_data.sens_data(counter)=0
+		current_sensor_data.mon_ver(counter)=0
+		current_sensor_data.firm_ver(counter)=0
+	next counter
+	
+end sub
+
+
+sub init_sockets()
+	dim f as byte
+	for f=8 to 15
+		sock.num=f
+		sock.txbuffrq(4)
+		sock.varbuffrq(4)
+		sock.redir(PL_REDIR_SOCK0 + sock.num)
+		sock.protocol=PL_SOCK_PROTOCOL_TCP
+		sock.inconmode=PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
+		sock.allowedinterfaces="NET,WLN"
+		sock.httpportlist="80,90"
+	next f
+	sys.buffalloc()
+	dhcp_start(PL_SOCK_INTERFACE_NET,"","")
+end sub
+
+sub on_sock_data_arrival()
+	dhcp_proc_data()
+end sub
+
+sub callback_dhcp_ok(renew as no_yes, interface as pl_sock_interfaces, byref ip as string, byref gateway_ip as string, byref netmask as string, lease_time as dword)
+	if interface=PL_SOCK_INTERFACE_NET then
+		if renew=YES and net.ip<>ip then
+			sys.reboot
+		end if
+		if net.ip<>ip then
+			net.ip=ip
+			net.gatewayip=gateway_ip
+			net.netmask=netmask
+		end if
+	end if
+end sub
+
+sub callback_dhcp_failure(interface as pl_sock_interfaces,failure_code as en_dhcp_status_codes)
+	
+end sub
+
+sub callback_dhcp_pre_clear_ip(interface as pl_sock_interfaces)
+	
+end sub
+
+sub callback_dhcp_pre_buffrq(required_buff_pages as byte)
+	
+end sub
+
+sub callback_dhcp_buff_released()
+	
+end sub

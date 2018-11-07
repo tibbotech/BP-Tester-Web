@@ -57,11 +57,20 @@ modbus_request(byte devaddr, byte request, word start, word count, string regdat
 	serial_send(data);
 }
 
+void 
+modbus_delay() 
+{
+	word b;
+	for (b=0;b<500;b++){}
+}
+
+
 //Receives and parses ModBus PDU
 
 void
 on_modbus_data_arrival()
 {
+	modbus_delay();
 	string tmp = "";
 	tmp = ser.getdata(255);
 	switch(_state) {
@@ -77,8 +86,7 @@ on_modbus_data_arrival()
 	if(len(_packet) >= 2) {
 		_pdu_len = _packet[2] + 5; // Byte count, including slave address, crc, byte length and function code
 		if(len(_packet) >= _pdu_len) {
-			delay_ms(1);
-			//char c = "&hFF" 
+			modbus_delay();
 			string c1 = _packet[9];
 			string c2 = _packet[10];
 			if(c1=="-86"  && c2=="85"){	
@@ -101,7 +109,7 @@ scan_sensors(unsigned char w)
 	sys.timercountms=0;
 	while(!modbus_finished()){
 		modbus_first_scan();
-		if (sys.timercountms>100){
+		if (sys.timercountms>1000){
 		break;
 		}
 	}
@@ -127,6 +135,7 @@ scan_sensors(unsigned char w)
 void
 modbus_first_scan()
 {
+	modbus_delay();
 	string tmp = "";
 	tmp = ser.getdata(255);
 	switch(_state) {
@@ -142,8 +151,7 @@ modbus_first_scan()
 	if(len(_packet) >= 2) {
 		_pdu_len = _packet[2] + 5; // Byte count, including slave address, crc, byte length and function code
 		if(len(_packet) >= _pdu_len) {
-			byte x;
-			for (x=0;x<100;x++){}
+			modbus_delay();
 			//char c = "&hFF" 
 			string c1 = _packet[9];
 			string c2 = _packet[10];
@@ -167,6 +175,10 @@ reprogram_address(byte oldaddr, byte newaddr)
 	modbus_request(oldaddr, PRESET_SINGLE_REGISTER, SCAN_SENSORS, 1, args);
 }
 
+//Scan sensors and waits for 0.1 seconds for a response
+
+
+
 //Gets sensor type
 
 void
@@ -178,10 +190,9 @@ get_sensor_type(unsigned char w)
 	result = modbus_result();
 	result=result[4];
 	if (result=="1"|| result=="2" || result=="3"){
-		set_sensor_type(result);
+	set_sensor_type(result);
 	} else {
 		set_sensor_type(0);
-		unknown_sensor_screen();
 	}
 }
 
@@ -226,6 +237,7 @@ get_version(string rawdata){
 void
 get_sensor_data(unsigned char w,unsigned char x)
 {
+	modbus_delay();
 	string result, rawdata;
 	
 	switch(x){

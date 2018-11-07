@@ -1,0 +1,11 @@
+<?
+include "http.tbh"
+current_sensor_state.poll_sensors=false
+dim b, id as byte
+dim s as string
+sock.gethttprqstring(6)
+s=sock.httprqstring
+b=instr(1,s," HTTP/1.1",1)
+s = sock.gethttprqstring(b-1)
+reprogram_address(0,val(s))
+?>

@@ -6,7 +6,7 @@ on_sys_init()
 {
 	modbus_init();
 	serial_setup();
-	lcd_init();
+	init_sockets();
 }
 
 //Initializes the serial port and IO lines for a Tibbit 05 in serial slot 0

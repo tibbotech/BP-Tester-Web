@@ -23,10 +23,8 @@ do_xmodem_upload(string filename)
 	kp.enabled=NO;
 	string data, pkt;
 	word job_size, block_num;
-	byte loop;
 	//Clears serial buffer and waits for 3 seconds to give sensor time to send "NACK"
 	ser.getdata(255);
-	please_wait_screen();
 	//If "NACK" is received, begins XModem upload. Otherwise shows failed screen.
 	for(;;) {
 		doevents;
@@ -41,8 +39,8 @@ do_xmodem_upload(string filename)
 	//Carries out XModem upload. If the total number of blocks sent equal the total number of blocks, upload successful screen is displayed.
 	romfile.open(filename);
 	job_size=romfile.size/128;
-	firmware_upload_in_prog_screen();
 	for(block_num=1; block_num<=job_size; ++block_num) {
+		doevents;
 		data=romfile.getdata(128);
 		if (block_num==job_size)
 			upload_succesful=true;
@@ -78,7 +76,6 @@ transmit_block(byte *data, word blk, word blockcnt)
 		//
 		pkt += chr(cksum & 0xFF);
 		sys.debugprint("Sending packet #" + str(blk) + " of " + str(blockcnt) + "\r\n");
-		update_firmware_upload_screen(blk, blockcnt);
 retransmit:	
 		serial_send(pkt);
 		sys.timercountms=0;
