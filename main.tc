@@ -7,6 +7,8 @@ on_sys_init()
 	modbus_init();
 	serial_setup();
 	init_sockets();
+	init_wln();
+	init_dhcp();
 }
 
 //Initializes the serial port and IO lines for a Tibbit 05 in serial slot 0

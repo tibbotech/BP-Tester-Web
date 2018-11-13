@@ -26,3 +26,5 @@ extern void init_sockets();
 extern string get_version(string rawdata);
 extern void set_firmware_version(string data);
 extern void set_monitor_version(string data);
+extern void init_wln();
+extern void init_dhcp();

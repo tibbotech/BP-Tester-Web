@@ -1,11 +1,11 @@
 [project]
 version=1
 platform=TPP2W(G2)
-src_lib_ver=2_01_00
+src_lib_ver=2_01_02
 name=Hexagon-Sensor-Test
 output=Hexagon-Sensor-Test.tpc
 debug=on
-defines= /dWLN_AVAILABLE=0 /dDHCP_DEBUG_PRINT=1
+defines= /dWLN_WPA=1 /dDHCP_DEBUG_PRINT=1 /dWLN_AVAILABLE=1 /dWLN_DEBUG_PRINT=1
 transport=udp_broadcast
 [address1]
 platform=TPP2W(G2)
@@ -151,3 +151,17 @@ format=65001
 condition=
 locked=no
 location=project
+[file21]
+path=wln\trunk\wln.tbh
+type=header
+format=
+condition=
+locked=no
+location=commonlib
+[file22]
+path=wln\trunk\wln.tbs
+type=basic
+format=
+condition=
+locked=yes
+location=commonlib

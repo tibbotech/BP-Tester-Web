@@ -195,7 +195,7 @@ class Monitor extends React.Component {
       return (
         <div><br></br>
           <h2 class="center"><red>No sensors detected! Please ensure that sensors are connected correctly and have been assigned a UNIQUE ID, then scan again.</red><br></br><br></br>
-            <Link to="/"><button class="smallbutton">Main Menu</button></Link></h2>
+            <Link to="/"><button class="smallbutton">Main Menu</button></Link><br></br><br></br></h2>
         </div>
       )
     } else if (this.state.sensors > 0) {
@@ -205,7 +205,8 @@ class Monitor extends React.Component {
           {this.renderDataList()}
         </table>
           <br></br><br></br>
-          <Link to="/"><button class="smallbutton">Main Menu</button></Link></h2>
+          <Link to="/"><button class="smallbutton">Main Menu</button></Link><br></br><br></br></h2>
+          
       )
     }
   }
