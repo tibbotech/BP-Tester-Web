@@ -80,7 +80,7 @@ sub lcd_poll()
 						data="Offline"
 					else
 						c=instr(1,current_sensor_data.sens_data(b),"x",1)
-						data=left(current_sensor_data.sens_data(b),c-1)+ "°C " + right(current_sensor_data.sens_data(b),len(current_sensor_data.sens_data(b))-c) + "%"
+						data=left(current_sensor_data.sens_data(b),c-1)+ "0°C " + right(current_sensor_data.sens_data(b),len(current_sensor_data.sens_data(b))-c) + "%"
 					end if				
 				case 2:
 					if current_sensor_data.sens_data(b)="" then
