@@ -70,7 +70,7 @@ modbus_delay()
 void
 on_modbus_data_arrival()
 {
-	modbus_delay();
+//	modbus_delay();
 	string tmp = "";
 	tmp = ser.getdata(255);
 	switch(_state) {
@@ -109,7 +109,7 @@ scan_sensors(unsigned char w)
 	sys.timercountms=0;
 	while(!modbus_finished()){
 		modbus_first_scan();
-		if (sys.timercountms>1000){
+		if (sys.timercountms>100){
 		break;
 		}
 	}
@@ -135,7 +135,7 @@ scan_sensors(unsigned char w)
 void
 modbus_first_scan()
 {
-	modbus_delay();
+//	modbus_delay();
 	string tmp = "";
 	tmp = ser.getdata(255);
 	switch(_state) {
@@ -174,10 +174,6 @@ reprogram_address(byte oldaddr, byte newaddr)
 	args = chr(0) +  chr(newaddr);
 	modbus_request(oldaddr, PRESET_SINGLE_REGISTER, SCAN_SENSORS, 1, args);
 }
-
-//Scan sensors and waits for 0.1 seconds for a response
-
-
 
 //Gets sensor type
 
@@ -237,7 +233,7 @@ get_version(string rawdata){
 void
 get_sensor_data(unsigned char w,unsigned char x)
 {
-	modbus_delay();
+//	modbus_delay();
 	string result, rawdata;
 	
 	switch(x){
