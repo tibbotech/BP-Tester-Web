@@ -145,7 +145,7 @@ class Monitor extends React.Component {
   constructor() {
     super();
     this.state = { dataList: [], sensors: null }
-    var sensorTypes = ["Unknown", "Temperature & Humidity", "Temperature", "Light"]
+    var sensorTypes = ["Unknown", "Temperature & Humidity", "Temperature", "Light", "", "Accelerometer"]
     this.interval = setInterval(() => {
       $.getJSON("json.html", (data) => {
         var dataList = [];
@@ -161,7 +161,7 @@ class Monitor extends React.Component {
           sensors: data.sensors
         })
       })
-    }, 1000);
+    }, 200);
   }
 
   createHeaders = () => {

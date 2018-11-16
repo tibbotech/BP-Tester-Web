@@ -9,6 +9,7 @@ on_sys_init()
 	init_sockets();
 	init_wln();
 	init_dhcp();
+	sys.onsystimerperiod=10;
 }
 
 //Initializes the serial port and IO lines for a Tibbit 05 in serial slot 0

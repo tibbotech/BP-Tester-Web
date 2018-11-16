@@ -61,7 +61,7 @@ end sub
 sub lcd_poll()
 	
 	dim data as string
-	dim b, c  as byte=0
+	dim b, c, d  as byte=0
 	x=0
 	y=0
 	z=0
@@ -93,6 +93,19 @@ sub lcd_poll()
 						data="Offline"
 					else
 						data=current_sensor_data.sens_data(b) + " lux"
+					end if
+				case 5:
+					if current_sensor_data.sens_data(b)="" then
+						data="Offline"
+					else
+						dim data2,data3 as string
+						c=instr(1,current_sensor_data.sens_data(b),"x",1)
+						data="x=" + left(current_sensor_data.sens_data(b),c-1)
+						d=instr(1,current_sensor_data.sens_data(b),"x",2)
+						data2=left(current_sensor_data.sens_data(b),d-1)
+						data2=" y=" + right(data2,c-1)
+						data3=" z=" + right(current_sensor_data.sens_data(b),len(current_sensor_data.sens_data(b))-d)
+						data=data+data2+data3
 					end if
 			end select
 			current_sensor_data.sens_data_parsed(b)=data

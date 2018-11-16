@@ -185,7 +185,7 @@ get_sensor_type(unsigned char w)
 	get_response();
 	result = modbus_result();
 	result=result[4];
-	if (result=="1"|| result=="2" || result=="3" || result=="5"){
+	if (result=="1"|| result=="2" || result=="3"){
 	set_sensor_type(result);
 	} else {
 		set_sensor_type(0);
@@ -249,24 +249,10 @@ get_sensor_data(unsigned char w,unsigned char x)
 	case 3:	//light
 		modbus_request(w, READ_INPUT_REGISTERS, READ_LIGHT_VALUE, 1, "");
 		break;
-	case 5:	//shock
-		//modbus_request(w, READ_INPUT_REGISTERS, READ_SHOCK_VALUE_X, 1, "");
-		modbus_request(w, READ_INPUT_REGISTERS, READ_SHOCK_VALUE_X, 1, "");
-		get_response();
-		rawdata = modbus_result();
-	
-		modbus_request(w, READ_INPUT_REGISTERS, READ_SHOCK_VALUE_Y, 1, "");
-		get_response();
-		rawdata = rawdata+modbus_result();
-		
-		modbus_request(w, READ_INPUT_REGISTERS, READ_SHOCK_VALUE_Z, 1, "");
-	 
-		break;
 	default:
 	}
-	
 	get_response();
-	rawdata = rawdata + modbus_result();
+	rawdata = modbus_result();
 	if(rawdata != "") {
 			switch(x) {
 				
@@ -278,9 +264,6 @@ get_sensor_data(unsigned char w,unsigned char x)
 					break;
 				case 3:
 					result=get_light(rawdata);
-					break;
-				case 5:
-					result=get_shock(rawdata);
 					break;
 				default:
 		}
@@ -333,14 +316,7 @@ get_light(string rawdata){
 	return light;
 }
 
-//Polls shock sensor
 
-string 
-get_shock(string rawdata){
-	string shock;
-	shock=hex_to_dec(hex(rawdata[3]),hex(rawdata[4])) + "x" + hex_to_dec(hex(rawdata[10]),hex(rawdata[11]))  + "x" + hex_to_dec(hex(rawdata[18]),hex(rawdata[19])) ;
-	return shock;
-}
 //Converts hex value to decimal value
 
 string

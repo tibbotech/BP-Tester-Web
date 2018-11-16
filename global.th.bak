@@ -6,7 +6,6 @@ extern string modbus_result();
 extern string get_temp_and_hum(string rawdata, unsigned char w);
 extern string get_temp(string rawdata);
 extern string get_light(string rawdata);
-extern string get_shock(string rawdata);
 extern string hex_to_dec(string hi,string lo);
 extern bool modbus_finished();
 extern bool modbus_resend();
