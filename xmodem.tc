@@ -1,7 +1,7 @@
-#include "global.th"
 #include "modbus.th"
 
 bool upload_succesful=true;
+//upload_state current_upload_state;
 
 #define XMODEM_PACKET_SIZE      128
 #define XMODEM_SOH              0x01
@@ -20,20 +20,21 @@ bool upload_succesful=true;
 bool
 do_xmodem_upload(string filename)
 {
-	kp.enabled=NO;
+	
 	string data, pkt;
 	word job_size, block_num;
 	//Clears serial buffer and waits for 3 seconds to give sensor time to send "NACK"
 	ser.getdata(255);
+	dword b;
+	for (b=0;b<500000;b++){}
 	//If "NACK" is received, begins XModem upload. Otherwise shows failed screen.
 	for(;;) {
 		doevents;
 		pkt = ser.getdata(255);
 		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C')
 			break;
-		upload_failed_screen();
-		upload_succesful=false;
-		kp.enabled=YES;
+		set_upload_state(false);
+	
 		return false;
 	}
 	//Carries out XModem upload. If the total number of blocks sent equal the total number of blocks, upload successful screen is displayed.
@@ -43,15 +44,14 @@ do_xmodem_upload(string filename)
 		doevents;
 		data=romfile.getdata(128);
 		if (block_num==job_size)
-			upload_succesful=true;
+			set_upload_state(true);
 		if(!transmit_block(data, block_num, job_size))
 			break;
 	}
 	serial_send(chr(XMODEM_EOT));
 	serial_send(chr(XMODEM_ETB));
 	if (upload_succesful)  
-		upload_successful_screen();
-	kp.enabled=YES;
+		set_upload_state(true);
 	return OK;
 }
 
@@ -84,9 +84,7 @@ retransmit:
 			//If waiting more than 3 seconds for a response, the upload is considered a failure and upload failed screen is displayed.
 			if(sys.timercountms>3000)
 			{
-				upload_failed_screen();
-				upload_succesful=false;
-				return false;
+			set_upload_state(false);
 			}
 		} while(rpl == "");
 		//Parses reply packet

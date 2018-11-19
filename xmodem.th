@@ -1,0 +1,5 @@
+struct upload_state{
+  bool upload_successful;
+};
+
+upload_state current_upload_state;

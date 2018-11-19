@@ -11,11 +11,9 @@ declare sub get_sensor_data(id as byte, stype as byte)
 declare sub upload_successful_screen()
 declare sub reprogram_address(oldaddr as byte, newaddr as byte)
 declare sub do_xmodem_upload(filename as string)
-declare sub upload_failed_screen()
 declare function scan_sensors(id as byte) as boolean
 declare sub get_firmware_version(id as byte)
 declare sub get_monitor_version(id as byte)
-
 
 const MAX_NUM_OF_SENSORS = 20
 const MAX_SENSOR_ID_NUM = 10
@@ -36,6 +34,14 @@ type sens_state
 	total_sensors_detected as byte
 end type
 
+type upload_state
+	upload_successful as boolean
 
+end type
+
+
+
+
+declare current_upload_state as upload_state
 declare current_sensor_data as sens_data
 declare current_sensor_state as sens_state

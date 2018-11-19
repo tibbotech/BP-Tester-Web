@@ -6,7 +6,7 @@ dim id as byte = 1
 
 dim current_sensor_data as sens_data
 dim current_sensor_state as sens_state
-
+dim current_upload_state as upload_state
 
 sub on_sys_timer()
 
@@ -21,6 +21,13 @@ sub on_sys_timer()
 	
 	dhcp_proc_timer()
 end sub
+
+'sub on_ser_data_arrival()
+	
+'	dim s as string
+'	s=ser.getdata(255)
+	
+'end sub
 
 'Scans for sensors
 
@@ -158,17 +165,6 @@ sub set_firmware_version(data as string)
 
 end sub
 
-'Displays the upload successful screen
-
-sub upload_successful_screen()
-end sub
-
-'Shows upload failed screen
-
-sub upload_failed_screen()
-end sub
-
-
 'Resets the array index counter for the sensor arrays
 
 sub reset_sensors()
@@ -190,16 +186,16 @@ sub reset_sensors()
 	
 end sub
 
-sub init_wln()
-	
-	wln_start("Tibbo9F",WLN_SECURITY_MODE_WPA2,"16836836",PL_WLN_DOMAIN_FCC,YES,PL_WLN_ASCAN_INFRASTRUCTURE)
+sub set_upload_state(state as boolean)
+	current_upload_state.upload_successful=state	
+end sub
 
+sub init_wln()
+	wln_start("Tibbo9F",WLN_SECURITY_MODE_WPA2,"16836836",PL_WLN_DOMAIN_FCC,YES,PL_WLN_ASCAN_INFRASTRUCTURE)
 end sub
 
 sub init_dhcp()
-
 	dhcp_start(PL_SOCK_INTERFACE_NET,"","")
-	
 end sub
 
 sub init_sockets()
@@ -215,10 +211,6 @@ sub init_sockets()
 		sock.httpportlist="80,90"
 	next f
 	sys.buffalloc()
-end sub
-
-sub on_sock_data_arrival()
-	dhcp_proc_data()
 end sub
 
 sub callback_dhcp_ok(renew as no_yes, interface as pl_sock_interfaces, byref ip as string, byref gateway_ip as string, byref netmask as string, lease_time as dword)
@@ -245,6 +237,22 @@ sub callback_dhcp_ok(renew as no_yes, interface as pl_sock_interfaces, byref ip 
 	end if
 end sub
 
+sub on_sock_data_arrival()
+	dhcp_proc_data()
+end sub
+
+sub on_wln_task_complete(completed_task as pl_wln_tasks)
+	wln_proc_task_complete(completed_task)
+end sub
+
+sub on_wln_event(wln_event as pl_wln_events)
+	wln_proc_event(wln_event)
+end sub
+
+sub callback_wln_ok()
+	dhcp_start(PL_SOCK_INTERFACE_WLN,"","")
+end sub
+
 sub callback_dhcp_failure(interface as pl_sock_interfaces,failure_code as en_dhcp_status_codes)
 	
 end sub
@@ -264,8 +272,6 @@ end sub
 sub callback_wln_failure(wln_state as en_wln_status_codes)
 	
 end sub
-
-
 
 sub callback_wln_starting_association()
 	
@@ -287,20 +293,3 @@ sub callback_wln_rescan_for_better_ap()
 	
 end sub
 
-sub on_wln_task_complete(completed_task as pl_wln_tasks)
-		
-	wln_proc_task_complete(completed_task)
-
-end sub
-
-sub on_wln_event(wln_event as pl_wln_events)
-
-	wln_proc_event(wln_event)
-
-end sub
-
-sub callback_wln_ok()
-	
-	dhcp_start(PL_SOCK_INTERFACE_WLN,"","")
-	
-end sub
