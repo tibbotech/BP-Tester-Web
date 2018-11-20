@@ -14,9 +14,11 @@ declare sub do_xmodem_upload(filename as string)
 declare function scan_sensors(id as byte) as boolean
 declare sub get_firmware_version(id as byte)
 declare sub get_monitor_version(id as byte)
+declare function get_accelerometer_values(b as byte) as string
+declare function convert_accelerometer_values(value as string) as string
 
 const MAX_NUM_OF_SENSORS = 20
-const MAX_SENSOR_ID_NUM = 247
+const MAX_SENSOR_ID_NUM = 10
 
 type sens_data
 	sens_no(MAX_NUM_OF_SENSORS) as byte

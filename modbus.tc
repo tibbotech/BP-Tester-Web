@@ -235,6 +235,7 @@ get_sensor_data(unsigned char w,unsigned char x)
 {
 //	modbus_delay();
 	string result, rawdata;
+	dword tmp;
 	
 	switch(x){
 	case 0:
@@ -254,7 +255,7 @@ get_sensor_data(unsigned char w,unsigned char x)
 		modbus_request(w, READ_INPUT_REGISTERS, READ_SHOCK_VALUE_X, 1, "");
 		get_response();
 		rawdata = modbus_result();
-	
+		
 		modbus_request(w, READ_INPUT_REGISTERS, READ_SHOCK_VALUE_Y, 1, "");
 		get_response();
 		rawdata = rawdata+modbus_result();
@@ -337,14 +338,58 @@ get_light(string rawdata){
 
 string 
 get_shock(string rawdata){
-	string shock;
-	shock=hex_to_dec(hex(rawdata[3]),hex(rawdata[4])) + "x" + hex_to_dec(hex(rawdata[10]),hex(rawdata[11]))  + "x" + hex_to_dec(hex(rawdata[18]),hex(rawdata[19])) ;
+
+	string shock, shockx, shocky, shockz;
+	signed int intx, inty, intz;
+	intx=hex_to_dec_in_word(hex(rawdata[3]),hex(rawdata[4]));
+	inty=hex_to_dec_in_word(hex(rawdata[10]),hex(rawdata[11]));
+	intz=hex_to_dec_in_word(hex(rawdata[17]),hex(rawdata[18]));
+	
+//	shock_as_int=hex_to_dec(hex(rawdata[3]),hex(rawdata[4])) + "x" + hex_to_dec(hex(rawdata[10]),hex(rawdata[11]))  + "x" + hex_to_dec(hex(rawdata[18]),hex(rawdata[19]));
+	shockx=intx;
+	shocky=inty;
+	shockz=intz;
+	shock=shockx+"x"+shocky+"x"+shockz;
 	return shock;
+
+
+
+
+//	short short_x, short_y, short_z;
+//	float float_x, float_y, float_z; 
+	
+//	short_x=hex_to_dec_in_word(hex(rawdata[3]),hex(rawdata[4]));
+//	short_y=hex_to_dec_in_word(hex(rawdata[10]),hex(rawdata[11]));
+//	short_z=hex_to_dec_in_word(hex(rawdata[18]),hex(rawdata[19]));
+	
+//	float_x=short_x;
+//	float_x=float_x*29/10000;
+
+//	float_y=short_y;
+//	float_y=float_y*29/10000;
+	
+//	float_z=short_z;
+//	float_z=float_z*29/10000;
+
+
 }
 //Converts hex value to decimal value
 
 string
 hex_to_dec(string hi,string lo)
+{
+	string dec_val;
+	if (len(lo)==3){
+		lo="0"+right(lo,1);
+	}else{
+		lo=right(lo,2);
+	}
+	dec_val=hi+lo;
+	dec_val=val(dec_val);
+	return dec_val;	
+}
+
+word hex_to_dec_in_word(string hi,string lo)
 {
 	string dec_val;
 	if (len(lo)==3){

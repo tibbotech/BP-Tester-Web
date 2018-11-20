@@ -69,7 +69,7 @@ end sub
 sub lcd_poll()
 	
 	dim data as string
-	dim b, c, d  as byte=0
+	dim b, c as byte=0
 	x=0
 	y=0
 	z=0
@@ -106,14 +106,8 @@ sub lcd_poll()
 					if current_sensor_data.sens_data(b)="" then
 						data="Offline"
 					else
-						dim data2,data3 as string
-						c=instr(1,current_sensor_data.sens_data(b),"x",1)
-						data="x=" + left(current_sensor_data.sens_data(b),c-1)
-						d=instr(1,current_sensor_data.sens_data(b),"x",2)
-						data2=left(current_sensor_data.sens_data(b),d-1)
-						data2=" y=" + right(data2,c-1)
-						data3=" z=" + right(current_sensor_data.sens_data(b),len(current_sensor_data.sens_data(b))-d)
-						data=data+data2+data3
+						data=get_accelerometer_values(b)
+						
 					end if
 			end select
 			current_sensor_data.sens_data_parsed(b)=data
@@ -123,6 +117,42 @@ sub lcd_poll()
 end sub
 
 'Sets each sensors ID in the array "sensor_no"
+
+function get_accelerometer_values(b as byte) as string
+	dim c, d, e as byte
+	dim xval,yval,zval as string
+	dim w as word
+	
+	c=instr(1,current_sensor_data.sens_data(b),"x",1)
+	xval=left(current_sensor_data.sens_data(b),c-1)
+	xval="x= " +  convert_accelerometer_values(xval)
+	
+	d=instr(1,current_sensor_data.sens_data(b),"x",2)
+	yval=left(current_sensor_data.sens_data(b),d-1)
+	yval=right(yval,len(yval)-c)
+	yval=" y= " +  convert_accelerometer_values(yval)
+	
+	zval=right(current_sensor_data.sens_data(b),len(current_sensor_data.sens_data(b))-d)
+	zval=" z= " +  convert_accelerometer_values(zval)
+	get_accelerometer_values=xval+yval+zval
+	
+end function
+
+function convert_accelerometer_values(value as string) as string
+	
+	if left(value,1)="-" then
+		if len(value)=5 then
+			convert_accelerometer_values="-1." + mid(value,3,1)
+		else
+			convert_accelerometer_values="-0." + mid(value,2,1)
+		end if
+	else if len(value)=4 then
+		convert_accelerometer_values="1." + mid(value,2,1)
+	else
+		convert_accelerometer_values="0." + left(value,1)
+	end if	
+	
+end function
 
 sub set_sensor_id(id as byte)
 
