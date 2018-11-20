@@ -4,8 +4,8 @@ platform=TPP2W(G2)
 src_lib_ver=2_01_02
 name=Hexagon-Sensor-Test
 output=Hexagon-Sensor-Test.tpc
-debug=off
-defines= /dWLN_WPA=1 /dDHCP_DEBUG_PRINT=1 /dWLN_AVAILABLE=1 /dWLN_DEBUG_PRINT=1
+debug=on
+defines= /dWLN_WPA=1 /dWLN_AVAILABLE=1 /dDHCP_DEBUG_PRINT=1 /dWLN_DEBUG_PRINT=1
 transport=udp_broadcast
 [address1]
 platform=TPP2W(G2)
@@ -190,5 +190,6 @@ location=project
 path=http-resources\senduploadfirmwarecommand.html
 type=html
 format=65001
+condition=
 locked=no
 location=project

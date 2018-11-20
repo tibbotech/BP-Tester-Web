@@ -101,7 +101,7 @@ class MonitorMenu extends React.Component {
           </div>
           <div class="col-xs-12 col-md-4">
             <Link to="/monitor/" style={{ textDecoration: 'none' }}> <button class="button">
-              Monitor Sensors
+              View Sensor Readings
               </button></Link>
           </div>
         </div>

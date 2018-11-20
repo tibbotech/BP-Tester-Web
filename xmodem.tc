@@ -82,9 +82,10 @@ retransmit:
 		do {
 			rpl = ser.getdata(128);
 			//If waiting more than 3 seconds for a response, the upload is considered a failure and upload failed screen is displayed.
-			dword b;
-			for (b=0;b<500000;b++){
-			set_upload_state(false);
+			if(sys.timercountms>3000)
+			{
+				set_upload_state(false);
+				return false;
 			}			
 		} while(rpl == "");
 		//Parses reply packet
