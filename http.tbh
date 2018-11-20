@@ -16,7 +16,7 @@ declare sub get_firmware_version(id as byte)
 declare sub get_monitor_version(id as byte)
 
 const MAX_NUM_OF_SENSORS = 20
-const MAX_SENSOR_ID_NUM = 10
+const MAX_SENSOR_ID_NUM = 247
 
 type sens_data
 	sens_no(MAX_NUM_OF_SENSORS) as byte
@@ -36,11 +36,7 @@ end type
 
 type upload_state
 	upload_successful as boolean
-
 end type
-
-
-
 
 declare current_upload_state as upload_state
 declare current_sensor_data as sens_data

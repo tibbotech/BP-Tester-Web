@@ -61,6 +61,7 @@ sub lcd_scan()
 	
 	
 	current_sensor_state.total_sensors_detected=x
+	current_sensor_state.poll_sensors=true
 	
 end sub
 
