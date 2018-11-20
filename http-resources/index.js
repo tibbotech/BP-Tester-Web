@@ -73,7 +73,7 @@ class SetUp extends React.Component {
 
         </div>
         <div class="center">
-        <br></br><br></br><Link to="/"><button class="smallbutton">Main Menu</button></Link>
+          <br></br><br></br><Link to="/"><button class="smallbutton">Main Menu</button></Link>
         </div>
       </div>
     );
@@ -106,7 +106,7 @@ class MonitorMenu extends React.Component {
           </div>
         </div>
         <div class="center">
-        <br></br><br></br><Link to="/"><button class="smallbutton">Main Menu</button></Link>
+          <br></br><br></br><Link to="/"><button class="smallbutton">Main Menu</button></Link>
         </div>
       </div>
     );
@@ -409,7 +409,7 @@ class Monitor extends React.Component {
           sensors: data.sensors
         })
       })
-    }, 400);
+    }, 200);
   }
 
   createHeaders = () => {
@@ -430,6 +430,10 @@ class Monitor extends React.Component {
         </tr>
       )
     })
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.interval);
   }
 
   render() {
@@ -482,7 +486,7 @@ class ViewFirmware extends React.Component {
           sensors: data.sensors
         })
       })
-    }, 400);
+    }, 200);
   }
 
   createHeaders = () => {
@@ -504,6 +508,10 @@ class ViewFirmware extends React.Component {
         </tr>
       )
     })
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.interval);
   }
 
   render() {
