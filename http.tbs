@@ -125,15 +125,15 @@ function get_accelerometer_values(b as byte) as string
 	
 	c=instr(1,current_sensor_data.sens_data(b),"x",1)
 	xval=left(current_sensor_data.sens_data(b),c-1)
-	xval="x= " +  convert_accelerometer_values(xval)
+	xval="x=" +  convert_accelerometer_values(xval)
 	
 	d=instr(1,current_sensor_data.sens_data(b),"x",2)
 	yval=left(current_sensor_data.sens_data(b),d-1)
 	yval=right(yval,len(yval)-c)
-	yval=" y= " +  convert_accelerometer_values(yval)
+	yval="  y=" +  convert_accelerometer_values(yval)
 	
 	zval=right(current_sensor_data.sens_data(b),len(current_sensor_data.sens_data(b))-d)
-	zval=" z= " +  convert_accelerometer_values(zval)
+	zval="  z=" +  convert_accelerometer_values(zval)
 	get_accelerometer_values=xval+yval+zval
 	
 end function

@@ -470,8 +470,7 @@ class ViewFirmware extends React.Component {
     super();
     this.state = { dataList: [], sensors: null }
     var sensorTypes = ["Unknown", "Temperature & Humidity", "Temperature", "Light", "", "Accelerometer"]
-    this.interval = setInterval(() => {
-      $.getJSON("json.html", (data) => {
+         $.getJSON("json.html", (data) => {
         var dataList = [];
         for (let i = 0; i < data.id.length; i++) {
           dataList.push({
@@ -486,7 +485,6 @@ class ViewFirmware extends React.Component {
           sensors: data.sensors
         })
       })
-    }, 200);
   }
 
   createHeaders = () => {
