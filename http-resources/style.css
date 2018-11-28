@@ -130,3 +130,8 @@ th {
   color: white;
   background-color:#F36F30;
 }
+
+.readingstable {
+  border: 1px solid black;
+  width: 100px;
+}

@@ -409,13 +409,13 @@ class Monitor extends React.Component {
           sensors: data.sensors
         })
       })
-    }, 200);
+    }, 500);
   }
 
   createHeaders = () => {
     var names = ['ID', 'Type', 'Data'];
     var namesList = names.map(function (name) {
-      return <th>{name}</th>;
+      return <th class="readingstableth">{name}</th>;
     })
     return <tr>{namesList}</tr>
   }
@@ -424,9 +424,9 @@ class Monitor extends React.Component {
     return this.state.dataList.map(function (item) {
       return (
         <tr>
-          <td>{item.id}</td>
-          <td>{item.type}</td>
-          <td>{item.data}</td>
+          <td style={{ width: '10%' }}>{item.id}</td>
+          <td style={{ width: '45%' }}>{item.type}</td>
+          <td style={{ width: '45%' }}>{item.data}</td>
         </tr>
       )
     })
