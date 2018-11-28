@@ -1,31 +1,50 @@
-# Hexagon-Sensor-Test
+# Bus-Probe-Tester-Web
 
 To download the most recent project without installing GIT, please press the green "Clone or Download" button and select "Download ZIP".
 
 
 
-The Steps 
+Accessing the Web Interface
 -------------------
 
-The following are the steps for setting up and polling our *Hexagon Sensors* using a TPP2(G2) with LCD and Keypad.
+This application uses a web interface to allow the user to interact with Tibbo *Bus Probe Sensors*. In order to access the web interface, we must first know the IP address which has been assigned to the device. After loading the application to the device, open *Device Explorer* and take note of the IP address displayed next to the application. Then, navigate to that IP address using a web browser of your choosing.
 
 
-1. *Upload* - The monitor and firmware is uploaded to the sensors
 
-2. *Set ID* - Each sensor is given a unique ID between 1 and 247
+## Main Screen
 
-3. *Scan* - A scan is carried out in order to detect each sensor
+When the page loads, there are two menus to choose from. 
 
-4. *Poll* - The sensors are polled once every second and the latest values are displayed on screen
+**Set Up Sensors** allows the user to:
 
-   
+1. *Upload Monitor* 
+2. *Upload Firmware*
+3. *Set ID*
 
-Step 1: Uploading the Monitor and Firmware
+**Monitor Sensors** allows the user to:
+
+1. *Scan* 
+2. *View Firmware Versions* 
+3. *View Sensor Readings*
+
+
+
+Set Up Sensors Screen
 ------------------
 
-To begin, we must first ensure that the correct monitor and firmware are installed on the sensors. Start the **Hexagon-Sensor-Test** application and press the **Upload** button. Then,start the sensor in monitor mode by powering it on while holding the MD button on the sensor. The point of a pen or a pin can be used to press this MD button.  If we have successfully started the sensor in monitor mode, the LED light will be solid green. 
+We must first ensure that the correct monitor and firmware are installed on the sensors. The first step is the uploading the monitor.
 
-Next, we upload the monitor by pressing the **Upload Monitor** button. A loading bar will display on the screen to update us on the progress. If successful, a message box will be displayed on the screen. To complete the installation, we remove the power from the sensor and power it on again. The red LED light will turn solid for a few seconds, then blinking green and solid red, and finally just blinking green. The monitor has been updated!
+
+
+### 1. Upload Monitor
+
+Start the sensor in monitor mode by powering it on while holding the MD button on the sensor. The point of a pen or a pin can be used to press this MD button.  If we have successfully started the sensor in monitor mode, the LED light will be solid green. 
+
+Next, we upload the monitor by navigating to the **Upload Monitor** screen and pressing upload. A loading bar will display on the screen to update us on the progress. If successful, a message box will be displayed on the screen. To complete the installation, we remove the power from the sensor and power it on again. The red LED light will turn solid for a few seconds, then blinking green and solid red, and finally just blinking green. The monitor has been updated!
+
+
+
+### 2. Upload Firmware
 
 Next, we update the firmware. Once again, we start the sensor in monitor mode by powering it on while holding its MD button. This time, we press **Upload Firmware**. Again, a message box will be displayed if successful. In order to complete the installation, we must once more disconnect the power and reconnect again.
 
@@ -33,20 +52,32 @@ This process should be repeated for each sensor we are connecting. For best resu
 
 
 
-## Step 2: Setting IDs
+### 3. Set ID
 
-Navigate back to the home screen by pressing the **Exit** button. Then press the **Set ID** button. Use the **+** and **-** buttons to select the sensor number you wish to set. Then, press and hold the MD button on the desired sensor. The green LEDs should turn green. Then, press the **Set ID** button. If done correctly, the sensor ID will have been changed.
+Navigate to the **Set ID** screen. In the input box, enter the number you wish to assign to the sensor. Then, press and hold the MD button on the desired sensor. The green LED should turn green. Then, press the **Set ID** button. If done correctly, the sensor ID will have been changed.
 
-This process should be repeated for each sensor we are connecting. . Each sensor should be given it's own **<u>UNIQUE</u>** ID between 1 and 247. Two sensors being assigned the same ID will cause erratic results.
-
-
-
-## Step 3: Scanning for Sensors
-
-Navigate back to the home screen by pressing the **Exit** button. Then press the **Scan** button. A scan will be carried out and all sensors between 1 and 247 will be detected. We are now ready to poll.
+This process should be repeated for each sensor we are connecting. . Each sensor should be given its own **<u>UNIQUE</u>** ID between 1 and 247. Two sensors being assigned the same ID will cause erratic results.
 
 
 
-## Step 4: Polling Sensors
+## Monitor Sensors Screen
 
-To being polling sensors, press the **Poll** button. The sensors will be polled once per second. A maximum of 6 sensors can be displayed per page. If more than 6 sensors have been connected, we can cycle through the pages by pressing the MD on the TPP2(G2).
+Once all of the sensors have been properly set up, we can then monitor the sensors. The first step in doing this is performing a scan. A scan must be carried out each time the application is loaded or when a sensors monitor, firmware or ID has changed.
+
+
+
+### 1. Scan
+
+To scan for sensors, simply press the **Scan** button. A loading bar will provide an update on the progress. Once the scan is complete, the total number of sensors will be displayed. At this point, the sensors can now be monitored.
+
+
+
+### 2. View Firmware Versions
+
+The **View Firmware Versions** screen displays each sensor detected, its *Monitor Version* and its *Firmware Version*.
+
+
+
+### 3. View Sensor Readings
+
+The **View Sensor Readings** screen displays readings for each sensor detected. The page updates every half second in order to provide real time values.
