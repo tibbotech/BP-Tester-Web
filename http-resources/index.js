@@ -26,7 +26,7 @@ class MainMenu extends React.Component {
   render() {
     return (
       <div>
-        <br></br><h1>Hexagon Sensor Test</h1><br></br><br></br>
+        <br></br><h1>Bus Probe Sensor Test</h1><br></br><br></br>
         <div class="row" align="center">
           <div class="col-xs-12 col-md-6">
             <Link to="/setupmenu/" style={{ textDecoration: 'none' }}><button class="button">
