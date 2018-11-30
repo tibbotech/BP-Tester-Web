@@ -63,9 +63,9 @@ enum modbus_func_code {
 	READ_HUM_VALUE			 	= 404,
 	READ_TEMP_VALUE			 	= 300,
 	READ_LIGHT_VALUE			= 500,
-	READ_SHOCK_VALUE_X			= 800,
-	READ_SHOCK_VALUE_Y			= 802,
-	READ_SHOCK_VALUE_Z			= 804
+	READ_SHOCK_VALUE_X			= 600,
+	READ_SHOCK_VALUE_Y			= 602,
+	READ_SHOCK_VALUE_Z			= 604
 };
 
 // ModBus request header 

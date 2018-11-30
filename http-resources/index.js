@@ -393,7 +393,7 @@ class Monitor extends React.Component {
   constructor() {
     super();
     this.state = { dataList: [], sensors: null }
-    var sensorTypes = ["Unknown", "Temperature & Humidity", "Temperature", "Light", "", "Accelerometer"]
+    var sensorTypes = ["Unknown", "Temperature", "Temperature & Humidity", "Light", "Accelerometer"]
     this.interval = setInterval(() => {
       $.getJSON("json.html", (data) => {
         var dataList = [];
@@ -469,8 +469,8 @@ class ViewFirmware extends React.Component {
   constructor() {
     super();
     this.state = { dataList: [], sensors: null }
-    var sensorTypes = ["Unknown", "Temperature & Humidity", "Temperature", "Light", "", "Accelerometer"]
-         $.getJSON("json.html", (data) => {
+    var sensorTypes = ["Unknown", "Temperature", "Temperature & Humidity", "Light", "Accelerometer"]
+        $.getJSON("json.html", (data) => {
         var dataList = [];
         for (let i = 0; i < data.id.length; i++) {
           dataList.push({

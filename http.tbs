@@ -83,26 +83,26 @@ sub lcd_poll()
 			select case current_sensor_data.sens_type(b)
 				case 0: 
 					data="Unknown"
-				case 1:
-					if current_sensor_data.sens_data(b)="" then
-						data="Offline"
-					else
-						c=instr(1,current_sensor_data.sens_data(b),"x",1)
-						data=left(current_sensor_data.sens_data(b),c-1)+ "0°C " + right(current_sensor_data.sens_data(b),len(current_sensor_data.sens_data(b))-c) + "%"
-					end if				
-				case 2:
+				case 1:					
 					if current_sensor_data.sens_data(b)="" then
 						data="Offline"
 					else
 						data=(current_sensor_data.sens_data(b) + "°C")
 					end if
+				case 2:		
+					if current_sensor_data.sens_data(b)="" then
+						data="Offline"
+					else
+						c=instr(1,current_sensor_data.sens_data(b),"x",1)
+						data=left(current_sensor_data.sens_data(b),c-1)+ "0°C " + right(current_sensor_data.sens_data(b),len(current_sensor_data.sens_data(b))-c) + "%"
+					end if			
 				case 3:
 					if current_sensor_data.sens_data(b)="" then
 						data="Offline"
 					else
 						data=current_sensor_data.sens_data(b) + " lux"
 					end if
-				case 5:
+				case 4:
 					if current_sensor_data.sens_data(b)="" then
 						data="Offline"
 					else

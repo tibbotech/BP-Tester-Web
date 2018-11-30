@@ -185,7 +185,7 @@ get_sensor_type(unsigned char w)
 	get_response();
 	result = modbus_result();
 	result=result[4];
-	if (result=="1"|| result=="2" || result=="3" || result=="5"){
+	if (result=="1"|| result=="2" || result=="3" || result=="4"){
 	set_sensor_type(result);
 	} else {
 		set_sensor_type(0);
@@ -241,16 +241,16 @@ get_sensor_data(unsigned char w,unsigned char x)
 	case 0:
 		result="Unknown";
 		break;
-	case 1:	//temp&hum
-		modbus_request(w, READ_INPUT_REGISTERS, READ_TEMP_H_VALUE, 1, "");
-		break;
-	case 2:	//temp
+	case 1:	//temp
 		modbus_request(w, READ_INPUT_REGISTERS, READ_TEMP_VALUE, 1, "");
+		break;
+	case 2:	//temp&hum
+		modbus_request(w, READ_INPUT_REGISTERS, READ_TEMP_H_VALUE, 1, "");
 		break;
 	case 3:	//light
 		modbus_request(w, READ_INPUT_REGISTERS, READ_LIGHT_VALUE, 1, "");
 		break;
-	case 5:	//shock
+	case 4:	//shock
 		//modbus_request(w, READ_INPUT_REGISTERS, READ_SHOCK_VALUE_X, 1, "");
 		modbus_request(w, READ_INPUT_REGISTERS, READ_SHOCK_VALUE_X, 1, "");
 		get_response();
@@ -272,15 +272,15 @@ get_sensor_data(unsigned char w,unsigned char x)
 			switch(x) {
 				
 				case 1:
-					result=get_temp_and_hum(rawdata, w);
+					result=get_temp(rawdata);
 					break;
 				case 2:
-					result=get_temp(rawdata);
+					result=get_temp_and_hum(rawdata, w);
 					break;
 				case 3:
 					result=get_light(rawdata);
 					break;
-				case 5:
+				case 4:
 					result=get_shock(rawdata);
 					break;
 				default:
