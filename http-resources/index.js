@@ -397,6 +397,8 @@ class Scan extends React.Component {
         <div>
           <h1>Scan Complete!</h1><br></br><br></br>
           <h2 class="center"><green>{this.state.numOfSensors}</green> sensors detected!<br></br><br></br><br></br>
+            <Link to="/viewfirmware/"><button class="smallbutton">View Firmware Versions</button></Link><br></br>
+            <Link to="/monitor/"><button class="smallbutton">View Sensor Readings</button></Link><br></br>
             <Link to="/setupmenu/"><button class="smallbutton">Back</button></Link><br></br>
             <Link to="/"><button class="smallbutton">Main Menu</button></Link></h2>
         </div>
