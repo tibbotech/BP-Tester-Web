@@ -89,17 +89,25 @@ class MonitorMenu extends React.Component {
       <div>
         <br></br><h1>Monitor Sensors</h1><br></br><br></br>
         <div class="row" align="center">
-          <div class="col-xs-12 col-md-4">
+        <div class="col-xs-4"></div>
+        
+          <div class="col-xs-4">
             <Link to="/scan/" style={{ textDecoration: 'none' }}><button class="button">
               Scan
               </button></Link>
           </div>
-          <div class="col-xs-12 col-md-4">
+          </div>
+
+          <br></br>
+          <div class="row" align="center">
+          <div class="col-xs-2"></div>
+
+          <div class="col-xs-4">
             <Link to="/viewfirmware/" style={{ textDecoration: 'none' }}><button class="button">
               View Firmware Versions
               </button></Link>
           </div>
-          <div class="col-xs-12 col-md-4">
+          <div class="col-xs-4">
             <Link to="/monitor/" style={{ textDecoration: 'none' }}> <button class="button">
               View Sensor Readings
               </button></Link>
@@ -339,24 +347,26 @@ class UploadFirmware extends React.Component {
 
 
 class Scan extends React.Component {
+
   constructor() {
     super();
-    this.state = { numOfSensors: null }
+    this.state = { percentage: null, numOfSensors: null }
+    this.startScan();
   }
 
   startScan() {
     jQuery.ajax("sendscancommand.html");
-    var percent = 0
     this.interval = setInterval(() => {
-      percent++;
-      document.getElementById("percent").innerHTML = (percent);
-      document.getElementById("progbar").style.width = (percent) + "%";
-      if (percent >= 100) {
-        percent = 0
-        clearInterval(this.interval);
-        { this.scanComplete() }
-      }
-    }, 400);
+      $.getJSON("json.html", (data) => {
+        this.setState({ percentage: data.percentage });
+        document.getElementById("percent").innerHTML = (this.state.percentage);
+        document.getElementById("progbar").style.width = (this.state.percentage) + "%";
+        if (this.state.percentage >= 100) {
+          clearInterval(this.interval);
+          { this.scanComplete() }
+        }
+      })     
+    }, 1000);  
   }
 
   scanComplete() {
@@ -370,7 +380,6 @@ class Scan extends React.Component {
     if (this.state.numOfSensors === null) {
       return (
         <div>
-          {this.startScan()}
           <br></br><h1><span id="title">Scanning for sensors...</span></h1><br></br>
           <h2>
             <div id="body" align='center'>

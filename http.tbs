@@ -33,11 +33,15 @@ end sub
 
 sub lcd_scan()
 	dim b as byte=0
+	dim percentage as byte=0
 	reset_sensors()
 	
 	'Sends modbus request to every sensor between min and max. If a response is received, that sensors ID is saved in the array "sensor_no"
 	for b=1 to MAX_SENSOR_ID_NUM
+		percentage = (b*100)/MAX_SENSOR_ID_NUM
+		current_upload_state.percentage = percentage
 		scan_sensors(b)
+		doevents
 	next b
 	
 	'If sensor ID is saved in the array "sensor_no", gets the sensor type and stores it in the corresponding index in the array "sensor_type"

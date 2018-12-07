@@ -38,6 +38,7 @@ end type
 
 type upload_state
 	upload_successful as boolean
+	percentage as byte
 end type
 
 declare current_upload_state as upload_state
