@@ -11,9 +11,12 @@ declare sub get_sensor_data(id as byte, stype as byte)
 declare sub upload_successful_screen()
 declare sub reprogram_address(oldaddr as byte, newaddr as byte)
 declare sub do_xmodem_upload(filename as string)
-declare function scan_sensors(id as byte) as boolean
+declare sub update_xmodem_upload_progress(currentpack as word, totalpacks as word)
+declare sub led_firmware_uploading()
 declare sub get_firmware_version(id as byte)
 declare sub get_monitor_version(id as byte)
+declare sub set_LED(pattern as byte)
+declare function scan_sensors(id as byte) as boolean
 declare function get_accelerometer_values(b as byte) as string
 declare function convert_accelerometer_values(value as string) as string
 

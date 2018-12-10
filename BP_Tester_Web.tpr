@@ -5,7 +5,7 @@ src_lib_ver=2_01_00
 name=BP_Tester_Web
 output=BP_Tester_Web.tpc
 debug=on
-defines= /dWLN_WPA=1 /dWLN_AVAILABLE=1 /dDHCP_DEBUG_PRINT=1 /dWLN_DEBUG_PRINT=1
+defines= /dWLN_WPA=1 /dDHCP_DEBUG_PRINT=1 /dWLN_AVAILABLE=1 /dWLN_DEBUG_PRINT=1
 transport=udp_broadcast
 [address1]
 platform=TPP2W(G2)
@@ -191,5 +191,17 @@ path=http-resources\senduploadfirmwarecommand.html
 type=html
 format=65001
 condition=
+locked=no
+location=project
+[file27]
+path=sendstartpollcommand.html
+type=html
+format=65001
+locked=no
+location=project
+[file28]
+path=sendstoppollcommand.html
+type=html
+format=65001
 locked=no
 location=project

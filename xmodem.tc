@@ -20,13 +20,16 @@ bool upload_succesful=true;
 bool
 do_xmodem_upload(string filename)
 {
-	
+	pat.play("G~",PL_PAT_CANINT);
+	reset_upload_percentage();
+	set_upload_state(true);
 	string data, pkt;
 	word job_size, block_num;
 	//Clears serial buffer and waits for 3 seconds to give sensor time to send "NACK"
 	ser.getdata(255);
-	dword b;
-	for (b=0;b<750000;b++){}
+	while(ser.rxlen <1){
+		doevents;
+	}
 	//If "NACK" is received, begins XModem upload. Otherwise shows failed screen.
 	for(;;) {
 		doevents;
@@ -34,7 +37,7 @@ do_xmodem_upload(string filename)
 		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C')
 			break;
 		set_upload_state(false);
-	
+		pat.play("R~",PL_PAT_CANINT);
 		return false;
 	}
 	//Carries out XModem upload. If the total number of blocks sent equal the total number of blocks, upload successful screen is displayed.
@@ -52,6 +55,7 @@ do_xmodem_upload(string filename)
 	serial_send(chr(XMODEM_ETB));
 	if (upload_succesful)  
 		set_upload_state(true);
+		pat.play("-------------G-G~",PL_PAT_CANINT);
 	return OK;
 }
 
@@ -60,6 +64,7 @@ do_xmodem_upload(string filename)
 static bool
 transmit_block(byte *data, word blk, word blockcnt)
 {
+	doevents;
 	string pkt, rpl;
 	byte retries;
 	byte i;
@@ -76,6 +81,7 @@ transmit_block(byte *data, word blk, word blockcnt)
 		//
 		pkt += chr(cksum & 0xFF);
 		sys.debugprint("Sending packet #" + str(blk) + " of " + str(blockcnt) + "\r\n");
+		update_xmodem_upload_progress(blk, blockcnt);
 retransmit:	
 		serial_send(pkt);
 		sys.timercountms=0;
@@ -85,6 +91,7 @@ retransmit:
 			if(sys.timercountms>3000)
 			{
 				set_upload_state(false);
+				upload_succesful=false;
 				return false;
 			}			
 		} while(rpl == "");

@@ -3,6 +3,9 @@ include "global.tbh"
 
 dim x,y,z,m,v,timer as byte=0
 dim id as byte = 1
+dim pattern_timer as dword = sys.timercount32
+dim LED as byte=0
+
 
 dim current_sensor_data as sens_data
 dim current_sensor_state as sens_state
@@ -14,35 +17,45 @@ sub on_sys_timer()
 	if current_sensor_state.poll_sensors=true then
 		timer=timer+1
 		if timer>=2 then
+			set_LED(&b00000)
 			lcd_poll()
 			timer=0
+		else
+			set_LED(&b11111)
 		end if
 	end if
 	
 	dhcp_proc_timer()
 end sub
 
-'sub on_ser_data_arrival()
+sub led_init()
 	
-'	dim s as string
-'	s=ser.getdata(255)
+	io.num=46
+	io.enabled=YES
+	io.num=47
+	io.enabled=YES
+	io.num=48
+	io.enabled=YES
+	set_LED(&b00000)
+	beep.divider=21600
+	beep.play("BB",PL_BEEP_CANINT)
+	pat.play("--B-B-B--",PL_PAT_CANINT)
 	
-'end sub
+end sub
 
-'Scans for sensors
 
 sub lcd_scan()
 	dim b as byte=0
-	dim percentage as byte=0
 	reset_sensors()
+	pat.play("G~",PL_PAT_CANINT)
 	
 	'Sends modbus request to every sensor between min and max. If a response is received, that sensors ID is saved in the array "sensor_no"
 	for b=1 to MAX_SENSOR_ID_NUM
-		percentage = (b*100)/MAX_SENSOR_ID_NUM
-		current_upload_state.percentage = percentage
+		current_upload_state.percentage = (b*100)/MAX_SENSOR_ID_NUM
 		scan_sensors(b)
 		doevents
 	next b
+	set_LED(&b00000)
 	
 	'If sensor ID is saved in the array "sensor_no", gets the sensor type and stores it in the corresponding index in the array "sensor_type"
 	for b=0 to MAX_NUM_OF_SENSORS-1
@@ -65,13 +78,13 @@ sub lcd_scan()
 	
 	
 	current_sensor_state.total_sensors_detected=x
-	current_sensor_state.poll_sensors=true
-	
+	pat.play("-------------G-G~",PL_PAT_CANINT)
+		
 end sub
 
 'Polls all of the sensors and updates their values accordingly
 sub lcd_poll()
-	
+
 	dim data as string
 	dim b, c as byte=0
 	x=0
@@ -253,8 +266,73 @@ sub reset_sensors()
 	
 end sub
 
+'Updates the progress of the firmware uploading
+
+sub update_xmodem_upload_progress(currentpack as word, totalpacks as word)
+
+	dim percent as word
+	percent = (currentpack*100)/totalpacks
+	current_upload_state.percentage = percent
+	led_firmware_uploading()
+	
+end sub
+
+'Plays a pattern on the LED lights to show firmware is uploading
+
+sub led_firmware_uploading()
+	pat.play("~G",PL_PAT_CANINT)
+	if sys.timercount32-pattern_timer>=1 then
+		if LED<4 then
+			LED=LED+1
+		else
+			LED=0
+		end if
+		pattern_timer = sys.timercount32
+	end if
+	
+	select case LED
+	case 4:
+		set_LED(&b00001)
+	case 3:
+		set_LED(&b00010)
+	case 2:
+		set_LED(&b00100)
+	case 1:
+		set_LED(&b01000)
+	case 0:
+		set_LED(&b10000)
+	end select	
+	
+end sub
+
+'Sets the LED lights
+
+sub set_LED(pattern as byte)
+
+	dim f,x as byte
+	dim s as string(8)
+	
+	s=mid(bin(pattern),3,8)
+	s=strgen(8-len(s),"0")+s	
+	
+	'make 5 clocks
+	io.num=PL_IO_NUM_47
+	for f=0 to 4
+		x=1-val(mid(s,f+4,1))
+		io.lineset(PL_IO_NUM_48,x)
+		io.state=LOW
+		io.state=HIGH
+	next f
+	
+end sub
+
 sub set_upload_state(state as boolean)
-	current_upload_state.upload_successful=state	
+	current_upload_state.upload_successful=state
+	set_LED(&b00000)
+end sub
+
+sub reset_upload_percentage()
+	current_upload_state.percentage=0
 end sub
 
 sub init_wln()
@@ -262,6 +340,7 @@ sub init_wln()
 end sub
 
 sub init_dhcp()
+	pat.play("---------------G~",PL_PAT_NOINT)
 	dhcp_start(PL_SOCK_INTERFACE_NET,"","")
 end sub
 
@@ -302,6 +381,7 @@ sub callback_dhcp_ok(renew as no_yes, interface as pl_sock_interfaces, byref ip 
 			wln.netmask=netmask
 		end if
 	end if
+	pat.play("-------------G-G~",PL_PAT_NOINT)
 end sub
 
 sub on_sock_data_arrival()
@@ -321,6 +401,8 @@ sub callback_wln_ok()
 end sub
 
 sub callback_dhcp_failure(interface as pl_sock_interfaces,failure_code as en_dhcp_status_codes)
+
+	pat.play("R~",PL_PAT_CANINT)
 	
 end sub
 

@@ -104,6 +104,7 @@ on_modbus_data_arrival()
 bool
 scan_sensors(unsigned char w)
 {
+	led_firmware_uploading();
 	modbus_request(w, READ_HOLDING_REGISTERS, SCAN_SENSORS, 4, "");
 	
 	sys.timercountms=0;

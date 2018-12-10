@@ -4,6 +4,7 @@
 void
 on_sys_init()
 {
+	led_init();
 	modbus_init();
 	serial_setup();
 	init_sockets();
