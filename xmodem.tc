@@ -34,7 +34,7 @@ do_xmodem_upload(string filename)
 	for(;;) {
 		doevents;
 		pkt = ser.getdata(255);
-		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C')
+		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C' || pkt[0] == XMODEM_ACK)
 			break;
 		set_upload_state(false);
 		pat.play("R~",PL_PAT_CANINT);

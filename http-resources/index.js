@@ -10,8 +10,8 @@ const AppRouter = () => (
       <Route path="/setid/" component={SetID} />
       <Route path="/scan/" component={Scan} />
       <Route path="/monitor/" component={Monitor} />
-      <Route path="/uploadmonitor/" component={UploadMonitor} />
-      <Route path="/uploadfirmware/" component={UploadFirmware} />
+      <Route path="/uploadmonitor/"  render={(props) => <Upload {...props} uploadtype={"monitor"} />} />
+      <Route path="/uploadfirmware/" render={(props) => <Upload {...props} uploadtype={"firmware"} />} />
       <Route path="/setupmenu/" component={SetUp} />
       <Route path="/monitormenu/" component={MonitorMenu} />
       <Route path="/viewfirmware/" component={ViewFirmware} />
@@ -153,7 +153,7 @@ class SetID extends React.Component {
   }
 }
 
-class UploadMonitor extends React.Component {
+class Upload extends React.Component {
 
   constructor() {
     super();
@@ -166,7 +166,12 @@ class UploadMonitor extends React.Component {
 
 
   startUpload() {
-    jQuery.ajax("senduploadmonitorcommand.html");
+    if (this.props.uploadtype == "firmware") {
+      jQuery.ajax("senduploadfirmwarecommand.html");
+    } else {
+      jQuery.ajax("senduploadmonitorcommand.html");
+
+    }
     this.setState({ uploadScreen: 2 });
     this.startUploadBar();
   }
@@ -176,8 +181,10 @@ class UploadMonitor extends React.Component {
       $.getJSON("json.html", (data) => {
         this.setState({ percentage: data.percentage });
         this.setState({ uploadSuccessful: data.uploadsuccessful });
-        document.getElementById("percent").innerHTML = (this.state.percentage);
-        document.getElementById("progbar").style.width = (this.state.percentage) + "%";
+        if (document.getElementById("percent") != undefined) {
+          document.getElementById("percent").innerHTML = (this.state.percentage);
+          document.getElementById("progbar").style.width = (this.state.percentage) + "%";
+        }
         if (this.state.uploadsuccessful === 0) {
           clearInterval(this.interval);
           this.setState({ percentage: 0, uploadScreen: 3 })
@@ -193,7 +200,6 @@ class UploadMonitor extends React.Component {
 
 
   uploadComplete() {
-    document.getElementById("title").innerHTML = 'Upload Complete';
     this.setState({ uploadScreen: 3 });
     $.getJSON("json.html", (data) => {
       this.setState({ uploadSuccessful: data.uploadsuccessful });
@@ -286,133 +292,6 @@ class UploadMonitor extends React.Component {
   }
 }
 
-
-class UploadFirmware extends React.Component {
-
-  constructor() {
-    super();
-    this.state = { percentage: 0, uploadScreen: 1, uploadSuccessful: false }
-  }
-
-  componentWillUnmount() {
-    clearInterval(this.interval);
-  }
-
-  startUpload() {
-    jQuery.ajax("senduploadfirmwarecommand.html");
-    this.setState({ uploadScreen: 2 });
-    this.startUploadBar();
-  }
-
-  startUploadBar() {
-    this.interval = setInterval(() => {
-      $.getJSON("json.html", (data) => {
-        this.setState({ percentage: data.percentage });
-        this.setState({ uploadSuccessful: data.uploadsuccessful });
-        document.getElementById("percent").innerHTML = (this.state.percentage);
-        document.getElementById("progbar").style.width = (this.state.percentage) + "%";
-        if (this.state.percentage >= 100) {
-          clearInterval(this.interval);
-          { this.uploadComplete() }
-        }
-      })
-    }, 200);
-  }
-
-
-
-  uploadComplete() {
-    document.getElementById("title").innerHTML = 'Upload Complete';
-    $.getJSON("json.html", (data) => {
-      this.setState({ uploadSuccessful: data.uploadsuccessful, uploadScreen: 3 });
-    })
-  }
-
-  render() {
-    if (this.state.uploadSuccessful === 0) {
-      clearInterval(this.interval);
-      return (
-        <div>
-          <div>
-            <h1>Upload Failed!</h1> <br></br> <br></br>
-            <h2 class="center">Please try again!<br></br><br></br><br></br></h2>
-          </div>
-          <h2>
-            <Link to="/setupmenu/"><button class="smallbutton">Back</button></Link><br></br>
-            <Link to="/"><button class="smallbutton">Main Menu</button></Link>
-          </h2>
-        </div>
-      )
-    } else if (this.state.uploadScreen === 1) {
-      return (
-        <div>
-          <br></br><h1 class="center">Upload Firmware</h1><br></br>
-          <h2 class="center">
-            Disconnect sensor power<br></br>
-            Press and hold MD button on sensor<br></br>
-            Connect power without releasing MD button<br></br>
-            Release the MD button<br></br>
-            Press upload<br></br><br></br>
-            <button class="smallbutton" onClick={this.startUpload.bind(this)}>Upload</button><br></br>
-            <Link to="/setupmenu/"><button class="smallbutton">Back</button></Link><br></br>
-            <Link to="/"><button class="smallbutton">Main Menu</button></Link>
-          </h2>
-        </div>
-      );
-    } else if (this.state.uploadScreen === 2 && this.state.percentage === 0) {
-      return (
-        <div>
-          <br></br><h1><span id="title">Uploading Firmware...</span></h1><br></br>
-          <h2>
-            <div id="body" align='center'>
-              <div id="percentupdate"><b><span id="percent"></span>% Complete</b></div><br></br>
-              <div class="progress" id="progressb">
-                <div id="progbar" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100">
-                </div>
-              </div><br></br>
-              <Link to="/setupmenu/"><button class="smallbutton">Back</button></Link><br></br>
-              <Link to="/"><button class="smallbutton">Main Menu</button></Link>
-            </div>
-          </h2>
-        </div>
-      )
-    } else if (this.state.uploadScreen === 2) {
-      return (
-        <div>
-          <br></br><h1><span id="title">Uploading Firmware...</span></h1><br></br>
-          <h2>
-            <div id="body" align='center'>
-              <div id="percentupdate"><b><span id="percent"></span>% Complete</b></div><br></br>
-              <div class="progress" id="progressb">
-                <div id="progbar" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100">
-                </div>
-              </div>
-            </div>
-          </h2>
-        </div>
-      )
-    } else if (this.state.uploadSuccessful === 1) {
-      return (
-        <div>
-          <div>
-            <h1>Upload Successful</h1> <br></br> <br></br>
-            <h2 class="center">Please reboot sensor for installation to complete<br></br><br></br><br></br></h2>
-          </div>
-          <h2>
-            <Link to="/setupmenu/"><button class="smallbutton">Back</button></Link><br></br>
-            <Link to="/"><button class="smallbutton">Main Menu</button></Link>
-          </h2>
-        </div>
-      )
-    } else
-      return (
-        <div>
-        </div>
-      )
-  }
-}
-
-
 class Scan extends React.Component {
 
   constructor() {
@@ -426,8 +305,10 @@ class Scan extends React.Component {
     this.interval = setInterval(() => {
       $.getJSON("json.html", (data) => {
         this.setState({ percentage: data.percentage });
-        document.getElementById("percent").innerHTML = (this.state.percentage);
-        document.getElementById("progbar").style.width = (this.state.percentage) + "%";
+        if (document.getElementById("percent") !=  undefined) { 
+          document.getElementById("percent").innerHTML = (this.state.percentage);
+          document.getElementById("progbar").style.width = (this.state.percentage) + "%";
+        }
         if (this.state.percentage >= 100) {
           clearInterval(this.interval);
           { this.scanComplete() }
@@ -437,8 +318,7 @@ class Scan extends React.Component {
   }
 
   scanComplete() {
-    document.getElementById("title").innerHTML = 'Scan Complete!';
-    $.getJSON("json.html", function (data) {
+      $.getJSON("json.html", function (data) {
       this.setState({ numOfSensors: data.sensors });
     }.bind(this));
   }
