@@ -10,6 +10,7 @@ dim LED as byte=0
 dim current_sensor_data as sens_data
 dim current_sensor_state as sens_state
 dim current_upload_state as upload_state
+dim current_xmodem_state as xmodem_state
 
 sub on_sys_timer()
 
@@ -329,6 +330,14 @@ end sub
 sub set_upload_state(state as boolean)
 	current_upload_state.upload_successful=state
 	set_LED(&b00000)
+end sub
+
+function xmodem_in_prog() as boolean
+	xmodem_in_prog=current_xmodem_state.xmodeminprog	
+end function
+
+sub set_xmodem_in_prog(state as boolean)
+	current_xmodem_state.xmodeminprog=state	
 end sub
 
 sub reset_upload_percentage()

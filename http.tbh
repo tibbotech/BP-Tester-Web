@@ -39,6 +39,10 @@ type sens_state
 	total_sensors_detected as byte
 end type
 
+type xmodem_state
+	xmodeminprog as boolean
+end type
+
 type upload_state
 	upload_successful as boolean
 	percentage as byte
@@ -47,3 +51,4 @@ end type
 declare current_upload_state as upload_state
 declare current_sensor_data as sens_data
 declare current_sensor_state as sens_state
+declare current_xmodem_state as xmodem_state

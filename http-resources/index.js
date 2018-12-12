@@ -197,13 +197,15 @@ class Upload extends React.Component {
     }, 200);
   }
 
-
-
   uploadComplete() {
     this.setState({ uploadScreen: 3 });
     $.getJSON("json.html", (data) => {
       this.setState({ uploadSuccessful: data.uploadsuccessful });
     })
+  }
+
+  stopXModem() {
+    jQuery.ajax("sendstopxmodemcommand.html");
   }
 
   render() {
@@ -225,7 +227,7 @@ class Upload extends React.Component {
     else if (this.state.uploadScreen === 1) {
       return (
         <div>
-          <br></br><h1 class="center">Upload Monitor</h1><br></br>
+          <br></br><h1 class="center">Upload {this.props.uploadtype == "firmware" ? "Firmware" : "Monitor"}</h1><br></br>
           <h2 class="center">
             Disconnect sensor power<br></br>
             Press and hold MD button on sensor<br></br>
@@ -241,7 +243,7 @@ class Upload extends React.Component {
     } else if (this.state.uploadScreen === 2 && this.state.percentage === 0) {
       return (
         <div>
-          <br></br><h1><span id="title">Uploading Monitor...</span></h1><br></br>
+        <br></br><h1><span id="title">Uploading {this.props.uploadtype == "firmware" ? "Firmware" : "Monitor"}...</span></h1><br></br>
           <h2>
             <div id="body" align='center'>
               <div id="percentupdate"><b><span id="percent"></span>% Complete</b></div><br></br>
@@ -249,7 +251,7 @@ class Upload extends React.Component {
                 <div id="progbar" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100">
                 </div>
               </div><br></br>
-              <Link to="/setupmenu/"><button class="smallbutton">Back</button></Link><br></br>
+              <Link to="/setupmenu/"><button class="smallbutton"  onClick={this.stopXModem.bind(this)}>Back</button></Link><br></br>
               <Link to="/"><button class="smallbutton">Main Menu</button></Link>
             </div>
           </h2>
@@ -258,7 +260,7 @@ class Upload extends React.Component {
     } else if (this.state.uploadScreen === 2) {
       return (
         <div>
-          <br></br><h1><span id="title">Uploading Monitor...</span></h1><br></br>
+          <br></br><h1><span id="title">Uploading {this.props.uploadtype == "firmware" ? "Firmware" : "Monitor"}...</span></h1><br></br>
           <h2>
             <div id="body" align='center'>
               <div id="percentupdate"><b><span id="percent"></span>% Complete</b></div><br></br>

@@ -20,6 +20,7 @@ bool upload_succesful=true;
 bool
 do_xmodem_upload(string filename)
 {
+	set_xmodem_in_prog(true);
 	pat.play("G~",PL_PAT_CANINT);
 	reset_upload_percentage();
 	set_upload_state(true);
@@ -28,7 +29,11 @@ do_xmodem_upload(string filename)
 	//Clears serial buffer and waits for 3 seconds to give sensor time to send "NACK"
 	ser.getdata(255);
 	while(ser.rxlen <1){
-		doevents;
+		if (xmodem_in_prog()==true){
+			doevents;} 
+		else {
+			return true;
+		}
 	}
 	//If "NACK" is received, begins XModem upload. Otherwise shows failed screen.
 	for(;;) {
