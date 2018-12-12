@@ -296,6 +296,9 @@ string
 get_temp_and_hum(string rawdata, unsigned char w){
 	string temp, hum, result;
 	temp=hex_to_dec(hex(rawdata[3]),hex(rawdata[4]));
+	if (val(temp)>32767) {
+		temp=val(temp)-65536;
+	}
 	temp=left(temp,len(temp)-1)+"."+right(temp,1);
 	if (len(temp)<=2){
 	temp="0"+temp;
@@ -318,6 +321,9 @@ string
 get_temp(string rawdata){
 	string temp;
 	temp=hex_to_dec(hex(rawdata[3]),hex(rawdata[4]));
+	if (val(temp)>32767) {
+		temp=val(temp)-65536;
+	}
 	temp=left(temp,len(temp)-2)+"."+right(temp,2);
 	if (len(temp)<=3){
 	temp="0"+temp;
