@@ -162,6 +162,7 @@ class Upload extends React.Component {
 
   componentWillUnmount() {
     clearInterval(this.interval);
+    this.stopXModem();
   }
 
 
@@ -251,7 +252,7 @@ class Upload extends React.Component {
                 <div id="progbar" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100">
                 </div>
               </div><br></br>
-              <Link to="/setupmenu/"><button class="smallbutton"  onClick={this.stopXModem.bind(this)}>Back</button></Link><br></br>
+              <Link to="/setupmenu/"><button class="smallbutton">Back</button></Link><br></br>
               <Link to="/"><button class="smallbutton">Main Menu</button></Link>
             </div>
           </h2>
