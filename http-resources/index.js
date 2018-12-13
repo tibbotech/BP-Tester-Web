@@ -231,11 +231,12 @@ class Upload extends React.Component {
         <div>
           <br></br><h1 class="center">Upload {this.props.uploadtype == "firmware" ? "Firmware" : "Monitor"}</h1><br></br>
           <h2 class="center">
-            Disconnect sensor power<br></br>
-            Press and hold MD button on sensor<br></br>
-            Connect power without releasing MD button<br></br>
-            Release the MD button<br></br>
-            Press upload<br></br><br></br>
+            Leave only one Probe connected to your TPS device.<br></br>
+			Disconnect the Probe power.<br></br>
+            Press and hold the MD button on the Probe.<br></br>
+            Connect power without releasing the MD button.<br></br>
+            Release the MD button.<br></br>
+            Click Upload.<br></br><br></br>
             <button class="smallbutton" onClick={this.startUpload.bind(this)}>Upload</button><br></br>
             <Link to="/setupmenu/"><button class="smallbutton">Back</button></Link><br></br>
             <Link to="/"><button class="smallbutton">Main Menu</button></Link>
@@ -279,7 +280,7 @@ class Upload extends React.Component {
         <div>
           <div>
             <h1>Upload Successful</h1> <br></br> <br></br>
-            <h2 class="center">Please reboot sensor for installation to complete<br></br><br></br><br></br></h2>
+            <h2 class="center">Power-cycle the Probe to execute the Monitor upder. The updater app will self-destroy. To finish, reupload the application firmware.<br></br><br></br><br></br></h2>
           </div>
           <h2>
             <Link to="/setupmenu/"><button class="smallbutton">Back</button></Link><br></br>
