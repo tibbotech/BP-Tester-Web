@@ -22,6 +22,7 @@ const AppRouter = () => (
 class MainMenu extends React.Component {
   constructor() {
     super();
+    $.ajaxSetup({ cache: false });
   }
   render() {
     return (
@@ -179,7 +180,7 @@ class Upload extends React.Component {
 
   startUploadBar() {
     this.interval = setInterval(() => {
-      $.getJSON("json.html", (data) => {
+      $.getJSON("json.html?date=" + new Date(), (data) => {
         this.setState({ percentage: data.percentage });
         this.setState({ uploadSuccessful: data.uploadsuccessful });
         if (document.getElementById("percent") != undefined) {
@@ -200,7 +201,7 @@ class Upload extends React.Component {
 
   uploadComplete() {
     this.setState({ uploadScreen: 3 });
-    $.getJSON("json.html", (data) => {
+    $.getJSON("json.html?date=" + new Date(), (data) => {
       this.setState({ uploadSuccessful: data.uploadsuccessful });
     })
   }
@@ -306,7 +307,7 @@ class Scan extends React.Component {
   startScan() {
     jQuery.ajax("sendscancommand.html");
     this.interval = setInterval(() => {
-      $.getJSON("json.html", (data) => {
+      $.getJSON("json.html?date=" + new Date(), (data) => {
         this.setState({ percentage: data.percentage });
         if (document.getElementById("percent") !=  undefined) { 
           document.getElementById("percent").innerHTML = (this.state.percentage);
@@ -321,7 +322,7 @@ class Scan extends React.Component {
   }
 
   scanComplete() {
-      $.getJSON("json.html", function (data) {
+      $.getJSON("json.html?date=" + new Date(), function (data) {
       this.setState({ numOfSensors: data.sensors });
     }.bind(this));
   }
@@ -374,7 +375,7 @@ class Monitor extends React.Component {
     this.state = { dataList: [], sensors: null }
     var sensorTypes = ["Unknown", "Temperature", "Temperature & Humidity", "Light", "Accelerometer"]
     this.interval = setInterval(() => {
-      $.getJSON("json.html", (data) => {
+      $.getJSON("json.html?date=" + new Date(), (data) => {
         var dataList = [];
         for (let i = 0; i < data.id.length; i++) {
           dataList.push({
@@ -461,7 +462,7 @@ class ViewFirmware extends React.Component {
     super();
     this.state = { dataList: [], sensors: null }
     var sensorTypes = ["Unknown", "Temperature", "Temperature & Humidity", "Light", "Accelerometer"]
-    $.getJSON("json.html", (data) => {
+    $.getJSON("json.html?date=" + new Date(), (data) => {
       var dataList = [];
       for (let i = 0; i < data.id.length; i++) {
         dataList.push({
