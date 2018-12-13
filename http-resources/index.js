@@ -10,7 +10,7 @@ const AppRouter = () => (
       <Route path="/setid/" component={SetID} />
       <Route path="/scan/" component={Scan} />
       <Route path="/monitor/" component={Monitor} />
-      <Route path="/uploadmonitor/"  render={(props) => <Upload {...props} uploadtype={"monitor"} />} />
+      <Route path="/uploadmonitor/" render={(props) => <Upload {...props} uploadtype={"monitor"} />} />
       <Route path="/uploadfirmware/" render={(props) => <Upload {...props} uploadtype={"firmware"} />} />
       <Route path="/setupmenu/" component={SetUp} />
       <Route path="/monitormenu/" component={MonitorMenu} />
@@ -232,7 +232,7 @@ class Upload extends React.Component {
           <br></br><h1 class="center">Upload {this.props.uploadtype == "firmware" ? "Firmware" : "Monitor"}</h1><br></br>
           <h2 class="center">
             Leave only one Probe connected to your TPS device.<br></br>
-			Disconnect the Probe power.<br></br>
+            Disconnect the Probe power.<br></br>
             Press and hold the MD button on the Probe.<br></br>
             Connect power without releasing the MD button.<br></br>
             Release the MD button.<br></br>
@@ -246,7 +246,7 @@ class Upload extends React.Component {
     } else if (this.state.uploadScreen === 2 && this.state.percentage === 0) {
       return (
         <div>
-        <br></br><h1><span id="title">Uploading {this.props.uploadtype == "firmware" ? "Firmware" : "Monitor"}...</span></h1><br></br>
+          <br></br><h1><span id="title">Uploading {this.props.uploadtype == "firmware" ? "Firmware" : "Monitor"}...</span></h1><br></br>
           <h2>
             <div id="body" align='center'>
               <div id="percentupdate"><b><span id="percent"></span>% Complete</b></div><br></br>
@@ -279,8 +279,22 @@ class Upload extends React.Component {
       return (
         <div>
           <div>
-            <h1>Upload Successful</h1> <br></br> <br></br>
-            <h2 class="center">Power-cycle the Probe to execute the Monitor upder. The updater app will self-destroy. To finish, reupload the application firmware.<br></br><br></br><br></br></h2>
+            <h1>Upload Successful</h1> <br></br>
+            {
+              (this.props.uploadtype) == "firmware" ? 
+              (
+                <h2>
+                    Firmware.<br></br><br></br>
+                  </h2>
+              ) :
+                (
+                  <h2>
+                    Power-cycle the Probe to execute the Monitor updater.<br></br>
+                    The updater app will self-destroy.<br></br>
+                    To finish, reupload the application firmware.<br></br><br></br>
+                  </h2>
+                )
+            }
           </div>
           <h2>
             <Link to="/setupmenu/"><button class="smallbutton">Back</button></Link><br></br>
@@ -310,7 +324,7 @@ class Scan extends React.Component {
     this.interval = setInterval(() => {
       $.getJSON("json.html?date=" + new Date(), (data) => {
         this.setState({ percentage: data.percentage });
-        if (document.getElementById("percent") !=  undefined) { 
+        if (document.getElementById("percent") != undefined) {
           document.getElementById("percent").innerHTML = (this.state.percentage);
           document.getElementById("progbar").style.width = (this.state.percentage) + "%";
         }
@@ -323,7 +337,7 @@ class Scan extends React.Component {
   }
 
   scanComplete() {
-      $.getJSON("json.html?date=" + new Date(), function (data) {
+    $.getJSON("json.html?date=" + new Date(), function (data) {
       this.setState({ numOfSensors: data.sensors });
     }.bind(this));
   }
@@ -393,16 +407,16 @@ class Monitor extends React.Component {
     }, 500);
   }
 
-  stopPoll(){
+  stopPoll() {
     jQuery.ajax("sendstoppollcommand.html");
   }
 
-    startPoll(){
+  startPoll() {
     jQuery.ajax("sendstartpollcommand.html");
   }
-  
-  createHeaders(){
-//    createHeaders = () => {
+
+  createHeaders() {
+    //    createHeaders = () => {
     var names = ['ID', 'Type', 'Data'];
     var namesList = names.map(function (name) {
       return <th class="readingstableth">{name}</th>;
@@ -410,8 +424,8 @@ class Monitor extends React.Component {
     return <tr>{namesList}</tr>
   }
 
-//  renderDataList = () => {
-  renderDataList(){
+  //  renderDataList = () => {
+  renderDataList() {
     return this.state.dataList.map(function (item) {
       return (
         <tr>
