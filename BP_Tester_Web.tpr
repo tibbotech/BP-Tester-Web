@@ -5,12 +5,12 @@ src_lib_ver=2_01_00
 name=BP_Tester_Web
 output=BP_Tester_Web.tpc
 debug=off
-defines= /dWLN_WPA=1 /dDHCP_DEBUG_PRINT=1 /dWLN_AVAILABLE=1 /dGA1000=1 /dWLN_DEBUG_PRINT=1
+defines= /dWLN_WPA=1 /dDHCP_DEBUG_PRINT=1 /dWLN_AVAILABLE=0 /dGA1000=0 /dWLN_DEBUG_PRINT=1
 transport=udp_broadcast
 [address1]
 platform=TPP2W(G2)
 transport=udp_broadcast
-address=0.1.2.3.4.32
+address=0.36.119.82.149.40
 [file1]
 path=main.tc
 type=c
