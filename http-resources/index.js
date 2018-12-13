@@ -31,12 +31,12 @@ class MainMenu extends React.Component {
         <div class="row" align="center">
           <div class="col-xs-12 col-md-6">
             <Link to="/setupmenu/" style={{ textDecoration: 'none' }}><button class="button">
-              Set Up Sensors
+              Set Up Probes
               </button></Link>
           </div>
           <div class="col-xs-12 col-md-6">
             <Link to="/monitormenu/" style={{ textDecoration: 'none' }}> <button class="button">
-              Monitor Sensors
+              Monitor Bus Probes
               </button></Link>
           </div>
         </div>
@@ -54,7 +54,7 @@ class SetUp extends React.Component {
   render() {
     return (
       <div>
-        <br></br><h1>Set Up Sensors</h1><br></br><br></br>
+        <br></br><h1>Set Up Probes</h1><br></br><br></br>
         <div class="row" align="center">
           <div class="col-xs-12 col-md-4">
             <Link to="/uploadmonitor/" style={{ textDecoration: 'none' }}><button class="button">
@@ -88,7 +88,7 @@ class MonitorMenu extends React.Component {
   render() {
     return (
       <div>
-        <br></br><h1>Monitor Sensors</h1><br></br><br></br>
+        <br></br><h1>Monitor Bus Probes</h1><br></br><br></br>
         <div class="row" align="center">
           <div class="col-xs-4"></div>
 
@@ -110,7 +110,7 @@ class MonitorMenu extends React.Component {
           </div>
           <div class="col-xs-4">
             <Link to="/monitor/" style={{ textDecoration: 'none' }}> <button class="button">
-              View Sensor Readings
+              View Probe Readings
               </button></Link>
           </div>
         </div>
@@ -131,12 +131,12 @@ class SetID extends React.Component {
   render() {
     return (
       <div>
-        <br></br><h1 class="center">Set Sensor ID</h1><br></br>
+        <br></br><h1 class="center">Set Probe ID</h1><br></br>
         <h2 class="center">
-          Select the new ID<br></br>
-          Press and hold MD button on sensor<br></br>
-          Press "Set ID"<br></br>
-          Release the MD button<br></br><br></br>
+          Input the new ID.<br></br>
+          Press and hold the MD button on the Probe.<br></br>
+          Click Set ID.<br></br>
+          Release the MD button.<br></br><br></br>
           <input type="number" id="address" min="1" max="247" class="center"></input><br></br><br></br>
           <button class="smallbutton" onClick={this.sendSetIDCommand.bind(this)}>Set ID</button><br></br>
           <Link to="/setupmenu/"><button class="smallbutton">Back</button></Link><br></br>
@@ -284,13 +284,13 @@ class Upload extends React.Component {
               (this.props.uploadtype) == "firmware" ? 
               (
                 <h2>
-                    Firmware.<br></br><br></br>
+                    You can now power-cycle the Probe.<br></br><br></br>
                   </h2>
               ) :
                 (
                   <h2>
                     Power-cycle the Probe to execute the Monitor updater.<br></br>
-                    The updater app will self-destroy.<br></br>
+                    The updater will self-destroy.<br></br>
                     To finish, reupload the application firmware.<br></br><br></br>
                   </h2>
                 )
@@ -346,7 +346,7 @@ class Scan extends React.Component {
     if (this.state.numOfSensors === null) {
       return (
         <div>
-          <br></br><h1><span id="title">Scanning for sensors...</span></h1><br></br>
+          <br></br><h1><span id="title">Scanning for Probes...</span></h1><br></br>
           <h2>
             <div id="body" align='center'>
               <div id="percentupdate"><b><span id="percent"></span>% Complete</b></div><br></br>
@@ -362,7 +362,7 @@ class Scan extends React.Component {
       return (
         <div>
           <h1>Scan Complete!</h1><br></br><br></br>
-          <h2 class="center"><red>No sensors detected! Please ensure that sensors are connected correctly and have been assigned a UNIQUE ID, then scan again.</red><br></br><br></br><br></br>
+          <h2 class="center"><red>No Probes detected! Please ensure that the Probes are connected correctly and have been assigned UNIQUE IDs, then scan again.</red><br></br><br></br><br></br>
             <Link to="/monitormenu/"><button class="smallbutton">Back</button></Link><br></br>
             <Link to="/"><button class="smallbutton">Main Menu</button></Link></h2>
         </div>
@@ -371,9 +371,9 @@ class Scan extends React.Component {
       return (
         <div>
           <h1>Scan Complete!</h1><br></br><br></br>
-          <h2 class="center"><green>{this.state.numOfSensors}</green> sensors detected!<br></br><br></br><br></br>
+          <h2 class="center"><green>{this.state.numOfSensors}</green> Probe(s) detected!<br></br><br></br><br></br>
             <Link to="/viewfirmware/"><button class="smallbutton">View Firmware Versions</button></Link><br></br>
-            <Link to="/monitor/"><button class="smallbutton">View Sensor Readings</button></Link><br></br>
+            <Link to="/monitor/"><button class="smallbutton">View Probe Readings</button></Link><br></br>
             <Link to="/monitormenu/"><button class="smallbutton">Back</button></Link><br></br>
             <Link to="/"><button class="smallbutton">Main Menu</button></Link></h2>
         </div>
@@ -388,7 +388,7 @@ class Monitor extends React.Component {
     super();
     this.startPoll();
     this.state = { dataList: [], sensors: null }
-    var sensorTypes = ["Unknown", "Temperature", "Temperature & Humidity", "Light", "Accelerometer"]
+    var sensorTypes = ["Unknown", "BP#01 - Ambient temperature sensor", "BP#02 - Ambient temperature & humidity sensor", "BP#03 - Ambient light sensor", "BP#04 - 3-axis accelerometer"]
     this.interval = setInterval(() => {
       $.getJSON("json.html?date=" + new Date(), (data) => {
         var dataList = [];
@@ -452,7 +452,7 @@ class Monitor extends React.Component {
     else if (this.state.sensors === 0) {
       return (
         <div><br></br>
-          <h2 class="center"><red>No sensors detected! Please ensure that sensors are connected correctly and have been assigned a UNIQUE ID, then scan again.</red><br></br><br></br>
+          <h2 class="center"><red>The Probe list is empty. Please Scan for connected probes before accessing this screen.</red><br></br><br></br>
             <Link to="/monitormenu/"><button class="smallbutton">Back</button></Link><br></br>
             <Link to="/"><button class="smallbutton">Main Menu</button></Link><br></br><br></br></h2>
         </div>
@@ -476,7 +476,7 @@ class ViewFirmware extends React.Component {
   constructor() {
     super();
     this.state = { dataList: [], sensors: null }
-    var sensorTypes = ["Unknown", "Temperature", "Temperature & Humidity", "Light", "Accelerometer"]
+    var sensorTypes = ["Unknown", "BP#01 - Ambient temperature sensor", "BP#02 - Ambient temperature & humidity sensor", "BP#03 - Ambient light sensor", "BP#04 - 3-axis accelerometer"]
     $.getJSON("json.html?date=" + new Date(), (data) => {
       var dataList = [];
       for (let i = 0; i < data.id.length; i++) {
@@ -529,7 +529,7 @@ class ViewFirmware extends React.Component {
     else if (this.state.sensors === 0) {
       return (
         <div><br></br>
-          <h2 class="center"><red>No sensors detected! Please ensure that sensors are connected correctly and have been assigned a UNIQUE ID, then scan again.</red><br></br><br></br>
+          <h2 class="center"><red>The Probe list is empty. Please Scan for connected probes before accessing this screen.</red><br></br><br></br>
             <Link to="/monitormenu/"><button class="smallbutton">Back</button></Link><br></br>
             <Link to="/"><button class="smallbutton">Main Menu</button></Link><br></br><br></br>
           </h2>
