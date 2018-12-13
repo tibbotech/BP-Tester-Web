@@ -332,7 +332,7 @@ sub set_upload_state(state as boolean)
 	if state=true then
 		pat.play(PAT_TWO_SHORT_GREEN,PL_PAT_CANINT)
 	else
-		pat.play(PAT_LONG_RED,PL_PAT_CANINT);
+		pat.play(PAT_LONG_RED,PL_PAT_CANINT)
 	end if
 	set_LED(&b00000)
 end sub
