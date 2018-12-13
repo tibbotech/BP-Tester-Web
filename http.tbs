@@ -48,7 +48,7 @@ end sub
 sub lcd_scan()
 	dim b as byte=0
 	reset_sensors()
-	pat.play("G~",PL_PAT_CANINT)
+	pat.play(PAT_GREEN_ON,PL_PAT_CANINT)
 	
 	'Sends modbus request to every sensor between min and max. If a response is received, that sensors ID is saved in the array "sensor_no"
 	for b=1 to MAX_SENSOR_ID_NUM
@@ -79,7 +79,7 @@ sub lcd_scan()
 	
 	
 	current_sensor_state.total_sensors_detected=x
-	pat.play("-------------G-G~",PL_PAT_CANINT)
+	pat.play(PAT_TWO_SHORT_GREEN,PL_PAT_CANINT)
 		
 end sub
 
@@ -281,7 +281,7 @@ end sub
 'Plays a pattern on the LED lights to show firmware is uploading
 
 sub led_firmware_uploading()
-	pat.play("~G",PL_PAT_CANINT)
+	pat.play(PAT_GREEN_ON,PL_PAT_CANINT)
 	if sys.timercount32-pattern_timer>=1 then
 		if LED<4 then
 			LED=LED+1
@@ -329,6 +329,11 @@ end sub
 
 sub set_upload_state(state as boolean)
 	current_upload_state.upload_successful=state
+	if state=true then
+		pat.play(PAT_TWO_SHORT_GREEN,PL_PAT_CANINT)
+	else
+		pat.play(PAT_LONG_RED,PL_PAT_CANINT);
+	end if
 	set_LED(&b00000)
 end sub
 
@@ -338,6 +343,7 @@ end function
 
 sub set_xmodem_in_prog(state as boolean)
 	current_xmodem_state.xmodeminprog=state	
+	pat.play(PAT_GREEN_ON,PL_PAT_CANINT)
 end sub
 
 sub reset_upload_percentage()
@@ -350,7 +356,7 @@ sub init_wln()
 end sub
 
 sub init_dhcp()
-	pat.play("---------------G~",PL_PAT_NOINT)
+	pat.play(PAT_ONE_SHORT_GREEN,PL_PAT_NOINT)
 	dhcp_start(PL_SOCK_INTERFACE_NET,"","")
 end sub
 
@@ -391,7 +397,7 @@ sub callback_dhcp_ok(renew as no_yes, interface as pl_sock_interfaces, byref ip 
 			wln.netmask=netmask
 		end if
 	end if
-	pat.play("-------------G-G~",PL_PAT_CANINT)
+	pat.play(PAT_TWO_SHORT_GREEN,PL_PAT_CANINT)
 end sub
 
 sub on_sock_data_arrival()
@@ -413,7 +419,7 @@ end sub
 
 sub callback_dhcp_failure(interface as pl_sock_interfaces,failure_code as en_dhcp_status_codes)
 
-	pat.play("R~",PL_PAT_CANINT)
+	pat.play(PAT_LONG_RED,PL_PAT_CANINT)
 	
 end sub
 

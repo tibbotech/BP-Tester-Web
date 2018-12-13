@@ -21,7 +21,6 @@ bool
 do_xmodem_upload(string filename)
 {
 	set_xmodem_in_prog(true);
-	pat.play("G~",PL_PAT_CANINT);
 	reset_upload_percentage();
 	set_upload_state(true);
 	string data, pkt;
@@ -42,7 +41,6 @@ do_xmodem_upload(string filename)
 		if(pkt[0] == XMODEM_NACK || pkt[0] == 'C' || pkt[0] == XMODEM_ACK)
 			break;
 		set_upload_state(false);
-		pat.play("R~",PL_PAT_CANINT);
 		return false;
 	}
 	//Carries out XModem upload. If the total number of blocks sent equal the total number of blocks, upload successful screen is displayed.
@@ -60,7 +58,6 @@ do_xmodem_upload(string filename)
 	serial_send(chr(XMODEM_ETB));
 	if (upload_succesful)  
 		set_upload_state(true);
-		pat.play("-------------G-G~",PL_PAT_CANINT);
 	return OK;
 }
 
