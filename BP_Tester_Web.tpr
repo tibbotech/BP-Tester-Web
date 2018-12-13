@@ -4,8 +4,13 @@ platform=TPP2W(G2)
 src_lib_ver=2_01_00
 name=BP_Tester_Web
 output=BP_Tester_Web.tpc
+<<<<<<< HEAD
 debug=on
 defines=/dWLN_WPA=1 /dWLN_AVAILABLE=0 /dDHCP_DEBUG_PRINT=0 /dGA1000=0 /dWLN_DEBUG_PRINT=0
+=======
+debug=off
+defines= /dWLN_WPA=1 /dDHCP_DEBUG_PRINT=1 /dWLN_AVAILABLE=0 /dGA1000=0 /dWLN_DEBUG_PRINT=1
+>>>>>>> 8db4a32aba091738167d370ca81b4901da44ffcc
 transport=udp_broadcast
 [address1]
 platform=TPP2W(G2)
