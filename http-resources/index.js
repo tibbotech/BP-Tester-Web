@@ -31,7 +31,7 @@ class MainMenu extends React.Component {
         <div class="row" align="center">
           <div class="col-xs-12 col-md-6">
             <Link to="/setupmenu/" style={{ textDecoration: 'none' }}><button class="button">
-              Set Up Probes
+              Set Up Bus Probes
               </button></Link>
           </div>
           <div class="col-xs-12 col-md-6">
@@ -54,7 +54,7 @@ class SetUp extends React.Component {
   render() {
     return (
       <div>
-        <br></br><h1>Set Up Probes</h1><br></br><br></br>
+        <br></br><h1>Set Up Bus Probes</h1><br></br><br></br>
         <div class="row" align="center">
           <div class="col-xs-12 col-md-4">
             <Link to="/uploadmonitor/" style={{ textDecoration: 'none' }}><button class="button">
