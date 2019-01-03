@@ -10,6 +10,7 @@ end if
 ?>
 {
 "sensors":<?sock.setdata(str(current_sensor_state.total_sensors_detected))?>,
+"warning":<?sock.setdata(str(current_sensor_state.temp_warning))?>,
 "percentage":<?sock.setdata(str(current_upload_state.percentage))?>,
 "uploadsuccessful":<?sock.setdata(str(current_upload_state.upload_successful))?>,
 "id":[<?for b=0 to (total_sensors)

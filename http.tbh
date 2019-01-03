@@ -16,12 +16,13 @@ declare sub led_firmware_uploading()
 declare sub get_firmware_version(id as byte)
 declare sub get_monitor_version(id as byte)
 declare sub set_LED(pattern as byte)
+declare sub set_temp_warning(warning as boolean)
 declare function scan_sensors(id as byte) as boolean
 declare function get_accelerometer_values(b as byte) as string
 declare function convert_accelerometer_values(value as string) as string
 
 const MAX_NUM_OF_SENSORS = 20
-const MAX_SENSOR_ID_NUM = 247
+const MAX_SENSOR_ID_NUM = 5
 
 type sens_data
 	sens_no(MAX_NUM_OF_SENSORS) as byte
@@ -37,6 +38,7 @@ type sens_state
 	poll_sensors as boolean
 	scan_started as boolean
 	total_sensors_detected as byte
+	temp_warning as byte
 end type
 
 type xmodem_state

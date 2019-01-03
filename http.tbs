@@ -92,6 +92,7 @@ sub lcd_poll()
 	y=0
 	z=0
 	
+	set_temp_warning(false)
 	'For each index for the currently selected array, gets the sensor data depending on the sensor type.
 	for b=0 to MAX_NUM_OF_SENSORS-1
 		if current_sensor_data.sens_no(b)<>0 then
@@ -246,6 +247,12 @@ sub set_firmware_version(data as string)
 
 end sub
 
+sub set_temp_warning(warning as boolean)
+
+	current_sensor_state.temp_warning=warning
+
+end sub
+
 'Resets the array index counter for the sensor arrays
 
 sub reset_sensors()
@@ -264,7 +271,7 @@ sub reset_sensors()
 		current_sensor_data.mon_ver(counter)=0
 		current_sensor_data.firm_ver(counter)=0
 	next counter
-	
+		
 end sub
 
 'Updates the progress of the firmware uploading

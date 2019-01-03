@@ -387,7 +387,7 @@ class Monitor extends React.Component {
   constructor() {
     super();
     this.startPoll();
-    this.state = { dataList: [], sensors: null }
+    this.state = { dataList: [], sensors: null, warning: null }
     var sensorTypes = ["Unknown", "BP#01 - Ambient temperature sensor", "BP#02 - Ambient temperature & humidity sensor", "BP#03 - Ambient light sensor", "BP#04 - 3-axis accelerometer"]
     this.interval = setInterval(() => {
       $.getJSON("json.html?date=" + new Date(), (data) => {
@@ -401,7 +401,8 @@ class Monitor extends React.Component {
         }
         this.setState({
           dataList: dataList,
-          sensors: data.sensors
+          sensors: data.sensors,
+          warning: data.warning
         })
       })
     }, 500);
@@ -457,7 +458,19 @@ class Monitor extends React.Component {
             <Link to="/"><button class="smallbutton">Main Menu</button></Link><br></br><br></br></h2>
         </div>
       )
-    } else if (this.state.sensors > 0) {
+    } else if (this.state.sensors > 0 && this.state.warning === 1) {
+      return (
+        <h2><br></br><table align='center'>
+          {this.createHeaders()}
+          {this.renderDataList()}
+        </table>
+          <br></br><br></br>
+          <h2><red>*Humidity sensors are less accurate at temperatures below 5°C and above 50°C.</red></h2>
+          <br></br><br></br>
+          <Link to="/monitormenu/"><button class="smallbutton">Back</button></Link><br></br>
+          <Link to="/"><button class="smallbutton">Main Menu</button></Link><br></br><br></br></h2>
+      )
+    }  else if (this.state.sensors > 0 && this.state.warning === 0) {
       return (
         <h2><br></br><table align='center'>
           {this.createHeaders()}
@@ -545,7 +558,6 @@ class ViewFirmware extends React.Component {
           <Link to="/monitormenu/"><button class="smallbutton">Back</button></Link><br></br>
           <Link to="/"><button class="smallbutton">Main Menu</button></Link><br></br><br></br>
         </h2>
-
       )
     }
   }

@@ -311,6 +311,11 @@ get_temp_and_hum(string rawdata, unsigned char w){
 	if (len(hum)<=2){
 	hum="0"+hum;
 	};
+	if (val(temp)<26 || val(temp)>49){
+		set_temp_warning(true);
+	} else {
+		set_temp_warning(false);
+	}
 	result=temp+"x"+hum;
 	return result;
 } 

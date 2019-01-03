@@ -35,5 +35,6 @@ extern void init_dhcp();
 extern void led_firmware_uploading();
 extern void modbus_delay();
 extern void set_upload_state(bool state);
+extern void set_temp_warning(bool warning);
 extern void reset_upload_percentage();
 extern void update_xmodem_upload_progress(word currentpack, word totalpacks);
