@@ -60,8 +60,15 @@ modbus_request(byte devaddr, byte request, word start, word count, string regdat
 void 
 modbus_delay() 
 {
-	word b;
-	for (b=0;b<500;b++){}
+	dword delay;
+    delay = sys.timercountms;
+    if (delay + 1 < delay) {
+        delay = delay + 1;
+        while (sys.timercountms < delay){}
+	}else {
+       while (sys.timercountms - delay < 1){}
+    }
+	
 }
 
 
